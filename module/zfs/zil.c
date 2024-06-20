@@ -45,7 +45,7 @@
 #include <sys/abd.h>
 #include <sys/brt.h>
 #include <sys/wmsum.h>
-
+#include <linux/kernel.h>
 /*
  * The ZFS Intent Log (ZIL) saves "transaction records" (itxs) of system
  * calls that change the file system. Each itx has enough information to
@@ -477,6 +477,7 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 
 	for (blk = zh->zh_log; !BP_IS_HOLE(&blk); blk = next_blk) {
 		uint64_t blk_seq = blk.blk_cksum.zc_word[ZIL_ZC_SEQ];
+		zfs_dbgmsg("Parsing Block %llx\n", (u_longlong_t)blk_seq);
 		int reclen;
 		char *lrp, *end;
 		arc_buf_t *abuf = NULL;
@@ -485,18 +486,23 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 			break;
 
 		error = parse_blk_func(zilog, &blk, arg, txg);
-		if (error != 0)
+		if (error != 0){
+			zfs_dbgmsg("ZFS ZIL Block Seq %llx raise parse block error %d\n", (u_longlong_t)blk_seq, error);
 			break;
+		}
 		ASSERT3U(max_blk_seq, <, blk_seq);
 		max_blk_seq = blk_seq;
 		blk_count++;
 
-		if (max_lr_seq == claim_lr_seq && max_blk_seq == claim_blk_seq)
+		if (max_lr_seq == claim_lr_seq && max_blk_seq == claim_blk_seq){
+			zfs_dbgmsg("ZFS ZIL Block Seq %llx raise claim seq error\n", (u_longlong_t)blk_seq);
 			break;
+		}
 
 		error = zil_read_log_block(zilog, decrypt, &blk, &next_blk,
 		    &lrp, &end, &abuf);
 		if (error != 0) {
+			zfs_dbgmsg("zfs zil block seq %llx raise read log block error %d\n", (u_longlong_t)blk_seq, error);
 			if (abuf)
 				arc_buf_destroy(abuf, &abuf);
 			if (claimed) {
@@ -523,6 +529,7 @@ zil_parse(zilog_t *zilog, zil_parse_blk_func_t *parse_blk_func,
 
 			error = parse_lr_func(zilog, lr, arg, txg);
 			if (error != 0) {
+				zfs_dbgmsg("ZFS ZIL Block Seq %llx raise parse lr error %d\n", (u_longlong_t)blk_seq, error);
 				arc_buf_destroy(abuf, &abuf);
 				goto done;
 			}
