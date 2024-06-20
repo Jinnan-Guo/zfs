@@ -5513,6 +5513,7 @@ top:
 	if (!zfs_blkptr_verify(spa, bp, (zio_flags & ZIO_FLAG_CONFIG_WRITER) ?
 	    BLK_CONFIG_HELD : BLK_CONFIG_NEEDED, BLK_VERIFY_LOG)) {
 		rc = SET_ERROR(ECKSUM);
+		zfs_dbgmsg("ZFS ZIL blkptr verify failed\n");
 		goto done;
 	}
 
@@ -5533,10 +5534,13 @@ top:
 	 */
 	if (hdr != NULL && HDR_HAS_L1HDR(hdr) && (HDR_HAS_RABD(hdr) ||
 	    (hdr->b_l1hdr.b_pabd != NULL && !encrypted_read))) {
+		zfs_dbgmsg("Reading from L1 Cache\n");
 		boolean_t is_data = !HDR_ISTYPE_METADATA(hdr);
 
 		if (HDR_IO_IN_PROGRESS(hdr)) {
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
+				zfs_dbgmsg("printing from line %d\n", __LINE__);
 				mutex_exit(hash_lock);
 				ARCSTAT_BUMP(arcstat_cached_only_in_progress);
 				rc = SET_ERROR(ENOENT);
@@ -5552,6 +5556,7 @@ top:
 				 * an in-flight async read. Request that the
 				 * zio have its priority upgraded.
 				 */
+				zfs_dbgmsg("printing from line %d\n", __LINE__);
 				zio_change_priority(head_zio, priority);
 				DTRACE_PROBE1(arc__async__upgrade__sync,
 				    arc_buf_hdr_t *, hdr);
@@ -5577,8 +5582,10 @@ top:
 			 * arc_read_done propagates the physical I/O's io_error
 			 * to acb_zio_dummy, and thereby to pio.
 			 */
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			arc_callback_t *acb = NULL;
 			if (done || pio || *arc_flags & ARC_FLAG_WAIT) {
+				zfs_dbgmsg("printing from line %d\n", __LINE__);
 				acb = kmem_zalloc(sizeof (arc_callback_t),
 				    KM_SLEEP);
 				acb->acb_done = done;
@@ -5639,7 +5646,9 @@ top:
 			rc = arc_buf_alloc_impl(hdr, spa, zb, private,
 			    encrypted_read, compressed_read, noauth_read,
 			    B_TRUE, &buf);
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			if (rc == ECKSUM) {
+				zfs_dbgmsg("printing from line %d\n", __LINE__);
 				/*
 				 * Convert authentication and decryption errors
 				 * to EIO (and generate an ereport if needed)
@@ -5680,7 +5689,8 @@ top:
 		abd_t *hdr_abd;
 		int alloc_flags = encrypted_read ? ARC_HDR_ALLOC_RDATA : 0;
 		arc_buf_contents_t type = BP_GET_BUFC_TYPE(bp);
-
+		zfs_dbgmsg("Reading from non-L1\n");
+		zfs_dbgmsg("printing from line %d\n", __LINE__);
 		if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
 			if (hash_lock != NULL)
 				mutex_exit(hash_lock);
@@ -5693,6 +5703,7 @@ top:
 			 * This block is not in the cache or it has
 			 * embedded data.
 			 */
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			arc_buf_hdr_t *exists = NULL;
 			hdr = arc_hdr_alloc(spa_load_guid(spa), psize, lsize,
 			    BP_IS_PROTECTED(bp), BP_GET_COMPRESS(bp), 0, type);
@@ -5710,6 +5721,7 @@ top:
 				goto top; /* restart the IO request */
 			}
 		} else {
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			/*
 			 * This block is in the ghost cache or encrypted data
 			 * was requested and we didn't have it. If it was
@@ -5860,6 +5872,7 @@ top:
 		 * decode_embedded_bp_compressed().
 		 */
 		if (!embedded_bp) {
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			DTRACE_PROBE4(arc__miss, arc_buf_hdr_t *, hdr,
 			    blkptr_t *, bp, uint64_t, lsize,
 			    zbookmark_phys_t *, zb);
@@ -5875,6 +5888,7 @@ top:
 		    spa->spa_l2cache.sav_count > 0;
 
 		if (vd != NULL && spa_has_l2 && !(l2arc_norw && devw)) {
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			/*
 			 * Read from the L2ARC if the following are true:
 			 * 1. The L2ARC vdev was previously cached.
@@ -5996,12 +6010,14 @@ top:
 		rzio = zio_read(pio, spa, bp, hdr_abd, size,
 		    arc_read_done, hdr, priority, zio_flags, zb);
 		acb->acb_zio_head = rzio;
-
+		zfs_dbgmsg("printing from line %d\n", __LINE__);
 		if (hash_lock != NULL)
 			mutex_exit(hash_lock);
 
 		if (*arc_flags & ARC_FLAG_WAIT) {
+			zfs_dbgmsg("printing from line %d\n", __LINE__);
 			rc = zio_wait(rzio);
+			zfs_dbgmsg("rzio wait errno %d\n", rc);
 			goto out;
 		}
 
@@ -6020,6 +6036,7 @@ done:
 	if (done)
 		done(NULL, zb, bp, buf, private);
 	if (pio && rc != 0) {
+		zfs_dbgmsg("printing from line %d\n", __LINE__);
 		zio_t *zio = zio_null(pio, spa, NULL, NULL, NULL, zio_flags);
 		zio->io_error = rc;
 		zio_nowait(zio);

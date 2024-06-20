@@ -2397,6 +2397,7 @@ zio_wait(zio_t *zio)
 	mutex_exit(&zio->io_lock);
 
 	error = zio->io_error;
+	zfs_dbgmsg("ZIO wait error after pipeline %d\n", error);
 	zio_destroy(zio);
 
 	return (error);

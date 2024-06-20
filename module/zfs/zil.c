@@ -285,6 +285,7 @@ zil_read_log_block(zilog_t *zilog, boolean_t decrypt, const blkptr_t *bp,
 			    zilc->zc_nused < sizeof (*zilc) ||
 			    zilc->zc_nused > size) {
 				error = SET_ERROR(ECKSUM);
+				zfs_dbgmsg("Checksum error while reading log block\n");
 			} else {
 				*begin = lr;
 				*end = lr + zilc->zc_nused - sizeof (*zilc);
@@ -298,12 +299,16 @@ zil_read_log_block(zilog_t *zilog, boolean_t decrypt, const blkptr_t *bp,
 			    sizeof (cksum)) ||
 			    (zilc->zc_nused > (size - sizeof (*zilc)))) {
 				error = SET_ERROR(ECKSUM);
+				zfs_dbgmsg("Checksum error while reading log block\n");
 			} else {
 				*begin = lr;
 				*end = lr + zilc->zc_nused;
 				*nbp = zilc->zc_next_blk;
 			}
 		}
+	}
+	else {
+		zfs_dbgmsg("ARC Read Error %d when reading the block\n", error);
 	}
 
 	return (error);
