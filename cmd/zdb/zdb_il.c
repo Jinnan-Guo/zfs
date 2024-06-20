@@ -533,9 +533,11 @@ dump_intent_log(zilog_t *zilog)
 		return;
 
 	if (verbose >= 2) {
+		int errvalue;
 		(void) printf("\n");
-		(void) zil_parse(zilog, print_log_block, print_log_record, NULL,
+		errvalue = zil_parse(zilog, print_log_block, print_log_record, NULL,
 		    zh->zh_claim_txg, B_FALSE);
+		fprintf(stderr, "error returned: %d", errvalue);
 		print_log_stats(verbose);
 	}
 }
