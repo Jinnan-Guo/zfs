@@ -45,7 +45,6 @@
 #include <sys/abd.h>
 #include <sys/brt.h>
 #include <sys/wmsum.h>
-#include <linux/kernel.h>
 /*
  * The ZFS Intent Log (ZIL) saves "transaction records" (itxs) of system
  * calls that change the file system. Each itx has enough information to
