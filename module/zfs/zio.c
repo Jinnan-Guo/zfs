@@ -4441,6 +4441,13 @@ zio_checksum_verify(zio_t *zio)
 	blkptr_t *bp = zio->io_bp;
 	int error;
 
+	zfs_dbgmsg("Verifying zio checksum\n");
+	if (bp == NULL) {
+		zfs_dbgmsg("NULL zio bp\n");
+	} else {
+		zfs_dbgmsg("zio bp checksum cksum=%llx/%llx/%llx/%llx", (u_longlong_t)bp->blk_cksum.zc_word[0], (u_longlong_t)bp->blk_cksum.zc_word[1],(u_longlong_t)bp->blk_cksum.zc_word[2], (u_longlong_t)bp->blk_cksum.zc_word[3]);
+	}
+
 	ASSERT(zio->io_vd != NULL);
 
 	if (bp == NULL) {
@@ -4451,11 +4458,15 @@ zio_checksum_verify(zio_t *zio)
 		if (zio->io_prop.zp_checksum == ZIO_CHECKSUM_OFF)
 			return (zio);
 
+		zfs_dbgmsg("Verifying against label checksum\n");
 		ASSERT3U(zio->io_prop.zp_checksum, ==, ZIO_CHECKSUM_LABEL);
 	}
 
 	if ((error = zio_checksum_error(zio, &info)) != 0) {
 		zio->io_error = error;
+		if (error == ECKSUM) {
+			zfs_dbgmsg("Checksum error in zio checksum verification");
+		}
 		if (error == ECKSUM &&
 		    !(zio->io_flags & ZIO_FLAG_SPECULATIVE)) {
 			mutex_enter(&zio->io_vd->vdev_stat_lock);

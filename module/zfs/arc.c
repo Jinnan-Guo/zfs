@@ -5690,7 +5690,7 @@ top:
 		int alloc_flags = encrypted_read ? ARC_HDR_ALLOC_RDATA : 0;
 		arc_buf_contents_t type = BP_GET_BUFC_TYPE(bp);
 		zfs_dbgmsg("Reading from non-L1\n");
-		zfs_dbgmsg("printing from line %d\n", __LINE__);
+		//zfs_dbgmsg("printing from line %d\n", __LINE__);
 		if (*arc_flags & ARC_FLAG_CACHED_ONLY) {
 			if (hash_lock != NULL)
 				mutex_exit(hash_lock);
@@ -5703,7 +5703,7 @@ top:
 			 * This block is not in the cache or it has
 			 * embedded data.
 			 */
-			zfs_dbgmsg("printing from line %d\n", __LINE__);
+			//zfs_dbgmsg("printing from line %d\n", __LINE__);
 			arc_buf_hdr_t *exists = NULL;
 			hdr = arc_hdr_alloc(spa_load_guid(spa), psize, lsize,
 			    BP_IS_PROTECTED(bp), BP_GET_COMPRESS(bp), 0, type);
@@ -5721,7 +5721,7 @@ top:
 				goto top; /* restart the IO request */
 			}
 		} else {
-			zfs_dbgmsg("printing from line %d\n", __LINE__);
+			//zfs_dbgmsg("printing from line %d\n", __LINE__);
 			/*
 			 * This block is in the ghost cache or encrypted data
 			 * was requested and we didn't have it. If it was
@@ -6007,15 +6007,16 @@ top:
 			}
 		}
 
+		zfs_dbgmsg("arc read bp's cksum %llx\n", (u_longlong_t)bp->blk_cksum.zc_word[3]);
 		rzio = zio_read(pio, spa, bp, hdr_abd, size,
 		    arc_read_done, hdr, priority, zio_flags, zb);
 		acb->acb_zio_head = rzio;
-		zfs_dbgmsg("printing from line %d\n", __LINE__);
+		//zfs_dbgmsg("printing from line %d\n", __LINE__);
 		if (hash_lock != NULL)
 			mutex_exit(hash_lock);
 
 		if (*arc_flags & ARC_FLAG_WAIT) {
-			zfs_dbgmsg("printing from line %d\n", __LINE__);
+			//zfs_dbgmsg("printing from line %d\n", __LINE__);
 			rc = zio_wait(rzio);
 			zfs_dbgmsg("rzio wait errno %d\n", rc);
 			goto out;
@@ -6036,7 +6037,7 @@ done:
 	if (done)
 		done(NULL, zb, bp, buf, private);
 	if (pio && rc != 0) {
-		zfs_dbgmsg("printing from line %d\n", __LINE__);
+		//zfs_dbgmsg("printing from line %d\n", __LINE__);
 		zio_t *zio = zio_null(pio, spa, NULL, NULL, NULL, zio_flags);
 		zio->io_error = rc;
 		zio_nowait(zio);
