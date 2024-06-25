@@ -526,12 +526,15 @@ zio_checksum_error_impl(spa_t *spa, const blkptr_t *bp,
 	}
 
 
-	zfs_dbgmsg("ACTUAL CKSUM: cksum=%llx/%llx/%llx/%llx", (u_longlong_t)actual_cksum.zc_word[0], (u_longlong_t)actual_cksum.zc_word[1],(u_longlong_t)actual_cksum.zc_word[2], (u_longlong_t)actual_cksum.zc_word[3]);
+	if (!ZIO_CHECKSUM_EQUAL(actual_cksum, expected_cksum)) {
+		zfs_dbgmsg("CKSUM ERROR\n");
+		
+		zfs_dbgmsg("ACTUAL CKSUM: cksum=%llx/%llx/%llx/%llx", (u_longlong_t)actual_cksum.zc_word[0], (u_longlong_t)actual_cksum.zc_word[1],(u_longlong_t)actual_cksum.zc_word[2], (u_longlong_t)actual_cksum.zc_word[3]);
 
-	zfs_dbgmsg("EXPECTED CKSUM: cksum=%llx/%llx/%llx/%llx", (u_longlong_t)expected_cksum.zc_word[0], (u_longlong_t)expected_cksum.zc_word[1],(u_longlong_t)expected_cksum.zc_word[2], (u_longlong_t)expected_cksum.zc_word[3]);
+		zfs_dbgmsg("EXPECTED CKSUM: cksum=%llx/%llx/%llx/%llx", (u_longlong_t)expected_cksum.zc_word[0], (u_longlong_t)expected_cksum.zc_word[1],(u_longlong_t)expected_cksum.zc_word[2], (u_longlong_t)expected_cksum.zc_word[3]);
 
-	if (!ZIO_CHECKSUM_EQUAL(actual_cksum, expected_cksum))
 		return (SET_ERROR(ECKSUM));
+	}
 
 	return (0);
 }
