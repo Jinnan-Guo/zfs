@@ -291,6 +291,8 @@ zfs_sync(struct super_block *sb, int wait, cred_t *cr)
 		if (zfsvfs->z_log != NULL)
 			zil_commit(zfsvfs->z_log, 0);
 
+		// wait until txg sync
+		txg_wait_synced(dp, 0);
 		zfs_exit(zfsvfs, FTAG);
 	} else {
 		/*
