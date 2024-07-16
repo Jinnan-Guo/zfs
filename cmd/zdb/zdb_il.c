@@ -480,6 +480,7 @@ print_log_block(zilog_t *zilog, const blkptr_t *bp, void *arg,
 
 	(void) printf("\tBlock seqno %llu, %s%s\n",
 	    (u_longlong_t)bp->blk_cksum.zc_word[ZIL_ZC_SEQ], claim, blkbuf);
+	(void) printf("\tBlock Birth %llu, Spa min claim txg %llu \n", (u_longlong_t)bp->blk_birth, (u_longlong_t)spa_min_claim_txg(zilog->zl_spa));
 
 	return (0);
 }
