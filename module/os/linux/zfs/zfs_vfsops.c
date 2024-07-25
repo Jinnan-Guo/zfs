@@ -276,6 +276,7 @@ zfs_sync(struct super_block *sb, int wait, cred_t *cr)
 	if (zfsvfs != NULL) {
 		/*
 		 * Sync a specific filesystem.
+		 * when userspace run syncfs(int fd)
 		 */
 		dsl_pool_t *dp;
 		int error;
@@ -293,9 +294,13 @@ zfs_sync(struct super_block *sb, int wait, cred_t *cr)
 			return (0);
 		}
 
-		if (zfsvfs->z_log != NULL)
-			zil_commit(zfsvfs->z_log, 0);
+		//if (zfsvfs->z_log != NULL)
+		        //we dont need to write tx to zil since we are triggering txg sync
+			//zil_commit(zfsvfs->z_log, 0);
 
+		// triggers txg sync
+		// TODO: user currently open txg number instead of 0
+		txg_wait_synced(dp, 0);
 		zfs_exit(zfsvfs, FTAG);
 	} else {
 		/*
