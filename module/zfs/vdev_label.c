@@ -2120,6 +2120,13 @@ retry:
 	}
 
 	/*
+	 * Place for prepare() callback
+	 * We do prepare() right before the uberblock update
+	 */
+	hrtime_t delay = 0.1;
+	zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
+
+	/*
 	 * Sync the uberblocks to all vdevs in svd[].
 	 * If the system dies in the middle of this step, there are two cases
 	 * to consider, and the on-disk state is consistent either way:
@@ -2144,6 +2151,12 @@ retry:
 
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, ub);
+
+	/*
+	 * Place for commit() callback
+	 * We do commit() right after the uberblock update
+	 */
+	zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
 
 	/*
 	 * Sync out odd labels for every dirty vdev.  If the system dies
