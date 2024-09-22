@@ -2123,7 +2123,7 @@ retry:
 	 * Place for prepare() callback
 	 * We do prepare() right before the uberblock update
 	 */
-	hrtime_t delay = 0.1;
+	hrtime_t delay = 0.5;
 	zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
 
 	/*
