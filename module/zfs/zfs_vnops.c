@@ -57,6 +57,7 @@
 #include <sys/zfs_quota.h>
 #include <sys/zfs_vfsops.h>
 #include <sys/zfs_znode.h>
+#include <sys/zfs_context.h>
 
 /*
  * Enable the experimental block cloning feature.  If this setting is 0, then
@@ -93,7 +94,10 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 		if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 			goto out;
 		atomic_inc_32(&zp->z_sync_writes_cnt);
+		hrtime_t delay = 0.5;
+		zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
 		zil_commit(zfsvfs->z_log, zp->z_id);
+		zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
 		atomic_dec_32(&zp->z_sync_writes_cnt);
 		zfs_exit(zfsvfs, FTAG);
 	}
