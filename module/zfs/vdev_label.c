@@ -2123,8 +2123,8 @@ retry:
 	 * Place for prepare() callback
 	 * We do prepare() right before the uberblock update
 	 */
-	hrtime_t delay = 0.5;
-	zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
+	hrtime_t ms_delay = 10;
+	zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].
@@ -2156,7 +2156,7 @@ retry:
 	 * Place for commit() callback
 	 * We do commit() right after the uberblock update
 	 */
-	zfs_sleep_until(gethrtime() + SEC2NSEC(delay));
+	zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
 
 	/*
 	 * Sync out odd labels for every dirty vdev.  If the system dies
