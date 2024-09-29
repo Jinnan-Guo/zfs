@@ -108,7 +108,6 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 		atomic_inc_32(&zp->z_sync_writes_cnt);
 		// place holder for commitment
 		hrtime_t ms_delay = 10;
-		zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
 		zil_commit(zfsvfs->z_log, zp->z_id);
 		// place holder for commitment
 		zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
