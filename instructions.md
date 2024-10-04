@@ -8,7 +8,7 @@ Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Reso
 
 3) `make -s -j$(nproc)`
 
-4) `sudo make install; sudo ldconfig; sudo depmod` or/and `sudo ./scripts/zfs.sh`
+4) `sudo make install; sudo ldconfig; sudo depmod; sudo ./scripts/zfs.sh`
 
 
 # Uninstall and remove
