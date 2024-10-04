@@ -1,0 +1,60 @@
+[!] Running Sequential Sync Write
+[!] BS: 8k
+[!] Num jobs: 16
+[!] Throughput (KiB/s): 9437, 
+[!] IOPS: 1179.674350, 
+[!] Running Sequential Sync Write
+[!] BS: 1m
+[!] Num jobs: 16
+[!] Throughput (KiB/s): 485215, 
+[!] IOPS: 473.842975, 
+[!] Running Sequential Sync Write
+[!] BS: 8k
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 18651, 
+[!] IOPS: 2331.477994, 
+[!] Running Sequential Sync Write
+[!] BS: 1m
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 656888, 
+[!] IOPS: 641.493084, 
+[!] Running Sequential Async Write
+[!] BS: 8k
+[!] Num jobs: 16
+[!] Throughput (KiB/s): 643532, 
+[!] IOPS: 80441.515651, 
+[!] Running Sequential Async Write
+[!] BS: 1m
+[!] Num jobs: 16
+[!] Throughput (KiB/s): 720466, 
+[!] IOPS: 703.580657, 
+[!] Running Sequential Async Write
+[!] BS: 8k
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 705957, 
+[!] IOPS: 88244.702480, 
+[!] Running Sequential Async Write
+[!] BS: 1m
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 688178, 
+[!] IOPS: 672.049415, 
+[!] Running Random Sync Write
+[!] BS: 8k
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 17866, 
+[!] IOPS: 2233.364995, 
+[!] Running Random Sync Write
+[!] BS: 8k
+[!] Num jobs: 128
+[!] Throughput (KiB/s): 59641, 
+[!] IOPS: 7455.221145, 
+[!] Running Random Async Write
+[!] BS: 8k
+[!] Num jobs: 32
+[!] Throughput (KiB/s): 108591, 
+[!] IOPS: 13573.985141, 
+[!] Running Random Async Write
+[!] BS: 8k
+[!] Num jobs: 128
+[!] Throughput (KiB/s): 121743, 
+[!] IOPS: 15217.934033,
