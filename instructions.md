@@ -2,11 +2,27 @@
 
 Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Resources/Building%20ZFS.html
 
-`sh autogen.sh`
+1) `sh autogen.sh`
 
-`./configure`,  add `--enable-debug` for printing out the messages with `zfs_dbgmsg` 
-`echo 1 >/sys/module/zfs/parameters/zfs_dbgmsg_enable`
-`cat /proc/spl/kstat/zfs/dbgmsg` 
+2) `./configure`,  add `--enable-debug` for printing out the messages with `zfs_dbgmsg()`. Also to enable printing you need to set the following: `echo 1 >/sys/module/zfs/parameters/zfs_dbgmsg_enable`. Printed lines will be shown with `cat /proc/spl/kstat/zfs/dbgmsg`.
 
-`make -s -j$(nproc)`
-`sudo make install; sudo ldconfig; sudo depmod` or/and `sudo ./scripts/zfs.sh`
+3) `make -s -j$(nproc)`
+
+4) `sudo make install; sudo ldconfig; sudo depmod` or/and `sudo ./scripts/zfs.sh`
+
+
+# Uninstall and remove
+
+1) `sudo make uninstall; sudo ldconfig; sudo depmod`
+
+2) `make clean`
+
+3) `pkill zed`
+
+4) `sudo modprobe -r zfs`
+
+5) `lsmod | grep zfs`
+
+6) `sudo depmod -a`
+
+7) `sudo reboot`
