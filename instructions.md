@@ -40,3 +40,6 @@ Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Reso
 5) `sudo systemctl start docker`
 
 6) `sudo docker info`
+
+# 
+`sudo docker run --name postgresql-server --rm -it --privileged --cap-add sys_admin --cap-add sys_ptrace --net host cloudsuite/data-serving-relational:server`
