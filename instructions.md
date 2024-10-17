@@ -1,4 +1,4 @@
-# Build and install
+# Build and install ZFS
 
 Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Resources/Building%20ZFS.html
 
@@ -11,7 +11,7 @@ Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Reso
 4) `sudo make install; sudo ldconfig; sudo depmod; sudo ./scripts/zfs.sh`
 
 
-# Uninstall and remove
+# Uninstall and remove ZFS
 
 1) `sudo make uninstall; sudo ldconfig; sudo depmod`
 
@@ -26,3 +26,17 @@ Instructions taken from: https://openzfs.github.io/openzfs-docs/Developer%20Reso
 6) `sudo depmod -a`
 
 7) `sudo reboot`
+
+# Instructions for attaching docker to ZFS
+
+1) `sudo systemctl stop docker`
+   
+2) `cp -au /var/lib/docker/ /var/lib/docker.bk`
+ 
+3) `sudo rm -rf /var/lib/docker`
+
+4)`sudo zpool create -f zpool-docker -m /var/lib/docker /dev/sda /dev/sdb /dev/sdc`
+
+5) `sudo systemctl start docker`
+
+6) `sudo docker info`
