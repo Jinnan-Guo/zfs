@@ -3844,6 +3844,8 @@ metaslab_flush_update(metaslab_t *msp, dmu_tx_t *tx)
 boolean_t
 metaslab_flush(metaslab_t *msp, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	spa_t *spa = msp->ms_group->mg_vd->vdev_spa;
 
 	ASSERT(MUTEX_HELD(&msp->ms_lock));

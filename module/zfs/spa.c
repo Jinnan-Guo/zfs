@@ -9779,6 +9779,8 @@ spa_sync_rewrite_vdev_config(spa_t *spa, dmu_tx_t *tx)
 void
 spa_sync(spa_t *spa, uint64_t txg)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	vdev_t *vd = NULL;
 
 	VERIFY(spa_writeable(spa));

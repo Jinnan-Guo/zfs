@@ -85,6 +85,7 @@ static ulong_t zfs_fsync_sync_cnt = 4;
 int
 zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
 	int error = 0;
 	zfsvfs_t *zfsvfs = ZTOZSB(zp);
 
@@ -95,7 +96,7 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 			goto out;
 		atomic_inc_32(&zp->z_sync_writes_cnt);
 		// place holder for commitment
-		hrtime_t ms_delay = 2;
+		hrtime_t ms_delay = 10;
 		zil_commit(zfsvfs->z_log, zp->z_id);
 		// place holder for commitment
 		zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
@@ -431,6 +432,7 @@ zfs_clear_setid_bits_if_necessary(zfsvfs_t *zfsvfs, znode_t *zp, cred_t *cr,
 int
 zfs_write(znode_t *zp, zfs_uio_t *uio, int ioflag, cred_t *cr)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
 	int error = 0, error1;
 	ssize_t start_resid = zfs_uio_resid(uio);
 	uint64_t clear_setid_bits_txg = 0;

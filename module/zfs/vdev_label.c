@@ -1957,6 +1957,7 @@ vdev_label_sync_list(spa_t *spa, int l, uint64_t txg, int flags)
 int
 vdev_config_sync(vdev_t **svd, int svdcount, uint64_t txg)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
 	spa_t *spa = svd[0]->vdev_spa;
 	uberblock_t *ub = &spa->spa_uberblock;
 	int error = 0;

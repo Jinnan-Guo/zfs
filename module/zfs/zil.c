@@ -3556,6 +3556,7 @@ zil_commit_itx_assign(zilog_t *zilog, zil_commit_waiter_t *zcw)
 void
 zil_commit(zilog_t *zilog, uint64_t foid)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
 	/*
 	 * We should never attempt to call zil_commit on a snapshot for
 	 * a couple of reasons:
@@ -3608,6 +3609,7 @@ void
 zil_commit_impl(zilog_t *zilog, uint64_t foid)
 {
 	ZIL_STAT_BUMP(zilog, zil_commit_count);
+	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	/*
 	 * Move the "async" itxs for the specified foid to the "sync"
@@ -3666,6 +3668,8 @@ zil_commit_impl(zilog_t *zilog, uint64_t foid)
 void
 zil_sync(zilog_t *zilog, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	zil_header_t *zh = zil_header_in_syncing_context(zilog);
 	uint64_t txg = dmu_tx_get_txg(tx);
 	spa_t *spa = zilog->zl_spa;
@@ -3825,6 +3829,7 @@ zilog_t *
 zil_alloc(objset_t *os, zil_header_t *zh_phys)
 {
 	zilog_t *zilog;
+	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	zilog = kmem_zalloc(sizeof (zilog_t), KM_SLEEP);
 
@@ -3871,6 +3876,8 @@ zil_alloc(objset_t *os, zil_header_t *zh_phys)
 void
 zil_free(zilog_t *zilog)
 {
+		zfs_dbgmsg("[log]: %s\n", __func__);
+
 	int i;
 
 	zilog->zl_stop_sync = 1;
@@ -4179,6 +4186,9 @@ static int
 zil_replay_log_record(zilog_t *zilog, const lr_t *lr, void *zra,
     uint64_t claim_txg)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
+
 	zil_replay_arg_t *zr = zra;
 	const zil_header_t *zh = zilog->zl_header;
 	uint64_t reclen = lr->lrc_reclen;

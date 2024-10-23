@@ -1990,6 +1990,9 @@ vdev_ashift_optimize(vdev_t *vd)
 int
 vdev_open(vdev_t *vd)
 {
+
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	spa_t *spa = vd->vdev_spa;
 	int error;
 	uint64_t osize = 0;

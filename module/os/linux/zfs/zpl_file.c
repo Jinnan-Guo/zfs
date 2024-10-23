@@ -54,6 +54,8 @@ static unsigned int zfs_fallocate_reserve_percent = 110;
 static int
 zpl_open(struct inode *ip, struct file *filp)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	cred_t *cr = CRED();
 	int error;
 	fstrans_cookie_t cookie;

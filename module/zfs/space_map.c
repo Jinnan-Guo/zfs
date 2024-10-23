@@ -551,6 +551,8 @@ space_map_write_seg(space_map_t *sm, uint64_t rstart, uint64_t rend,
     maptype_t maptype, uint64_t vdev_id, uint8_t words, dmu_buf_t **dbp,
     const void *tag, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	ASSERT3U(words, !=, 0);
 	ASSERT3U(words, <=, 2);
 
@@ -670,6 +672,8 @@ static void
 space_map_write_impl(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
     uint64_t vdev_id, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	spa_t *spa = tx->tx_pool->dp_spa;
 	dmu_buf_t *db;
 
@@ -756,6 +760,8 @@ void
 space_map_write(space_map_t *sm, range_tree_t *rt, maptype_t maptype,
     uint64_t vdev_id, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	ASSERT(dsl_pool_sync_context(dmu_objset_pool(sm->sm_os)));
 	VERIFY3U(space_map_object(sm), !=, 0);
 

@@ -47,6 +47,8 @@ uberblock_verify(uberblock_t *ub)
 boolean_t
 uberblock_update(uberblock_t *ub, vdev_t *rvd, uint64_t txg, uint64_t mmp_delay)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	ASSERT(ub->ub_txg < txg);
 
 	/*

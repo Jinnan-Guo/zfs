@@ -177,6 +177,7 @@
 int
 zfs_open(struct inode *ip, int mode, int flag, cred_t *cr)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
 	(void) cr;
 	znode_t	*zp = ITOZ(ip);
 	zfsvfs_t *zfsvfs = ITOZSB(ip);
@@ -203,6 +204,8 @@ zfs_open(struct inode *ip, int mode, int flag, cred_t *cr)
 int
 zfs_close(struct inode *ip, int flag, cred_t *cr)
 {
+		zfs_dbgmsg("[log]: %s\n", __func__);
+
 	(void) cr;
 	znode_t	*zp = ITOZ(ip);
 	zfsvfs_t *zfsvfs = ITOZSB(ip);
@@ -355,6 +358,8 @@ int
 zfs_write_simple(znode_t *zp, const void *data, size_t len,
     loff_t pos, size_t *residp)
 {
+		zfs_dbgmsg("[log]: %s\n", __func__);
+
 	fstrans_cookie_t cookie;
 	int error;
 

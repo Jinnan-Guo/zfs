@@ -517,6 +517,8 @@ txg_has_quiesced_to_sync(dsl_pool_t *dp)
 static __attribute__((noreturn)) void
 txg_sync_thread(void *arg)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	dsl_pool_t *dp = arg;
 	spa_t *spa = dp->dp_spa;
 	tx_state_t *tx = &dp->dp_tx;
@@ -597,6 +599,8 @@ txg_sync_thread(void *arg)
 
 		txg_stat_t *ts = spa_txg_history_init_io(spa, txg, dp);
 		start = ddi_get_lbolt();
+		zfs_dbgmsg("[log]: %llu\n", (u_longlong_t)txg);
+
 		spa_sync(spa, txg);
 		delta = ddi_get_lbolt() - start;
 		spa_txg_history_fini_io(spa, ts);
