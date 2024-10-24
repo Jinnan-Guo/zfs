@@ -9719,6 +9719,8 @@ spa_sync_iterate_to_convergence(spa_t *spa, dmu_tx_t *tx)
 static void
 spa_sync_rewrite_vdev_config(spa_t *spa, dmu_tx_t *tx)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	vdev_t *rvd = spa->spa_root_vdev;
 	uint64_t txg = tx->tx_txg;
 

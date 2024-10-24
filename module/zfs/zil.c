@@ -917,6 +917,8 @@ zilog_is_dirty(zilog_t *zilog)
 static void
 zil_commit_activate_saxattr_feature(zilog_t *zilog)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	dsl_dataset_t *ds = dmu_objset_ds(zilog->zl_os);
 	uint64_t txg = 0;
 	dmu_tx_t *tx = NULL;
@@ -1873,6 +1875,8 @@ zil_lwb_write_issue(zilog_t *zilog, lwb_t *lwb)
 	zbookmark_phys_t zb;
 	zio_priority_t prio;
 	int error;
+	
+	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	ASSERT3S(lwb->lwb_state, ==, LWB_STATE_CLOSED);
 
@@ -2234,6 +2238,7 @@ zil_lwb_commit(zilog_t *zilog, lwb_t *lwb, itx_t *itx)
 	lr_write_t *lrw, *lrwb;
 	char *lr_buf;
 	uint64_t dlen, reclen;
+	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	lr = &itx->itx_lr;
 	lrw = (lr_write_t *)lr;
@@ -2861,6 +2866,8 @@ zil_burst_done(zilog_t *zilog)
 static void
 zil_process_commit_list(zilog_t *zilog, zil_commit_waiter_t *zcw, list_t *ilwbs)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	spa_t *spa = zilog->zl_spa;
 	list_t nolwb_itxs;
 	list_t nolwb_waiters;
@@ -3108,6 +3115,8 @@ zil_process_commit_list(zilog_t *zilog, zil_commit_waiter_t *zcw, list_t *ilwbs)
 static uint64_t
 zil_commit_writer(zilog_t *zilog, zil_commit_waiter_t *zcw)
 {
+	zfs_dbgmsg("[log]: %s\n", __func__);
+
 	list_t ilwbs;
 	lwb_t *lwb;
 	uint64_t wtxg = 0;

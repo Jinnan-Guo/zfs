@@ -858,6 +858,7 @@ void
 txg_list_create(txg_list_t *tl, spa_t *spa, size_t offset)
 {
 	int t;
+	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	mutex_init(&tl->tl_lock, NULL, MUTEX_DEFAULT, NULL);
 
