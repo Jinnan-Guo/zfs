@@ -61,7 +61,6 @@
 void
 list_create(list_t *list, size_t size, size_t offset)
 {
-	zfs_dbgmsg("[log]: %s\n", __func__);
 
 	ASSERT(list);
 	ASSERT(size > 0);
