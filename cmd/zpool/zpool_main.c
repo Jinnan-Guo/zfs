@@ -3692,6 +3692,13 @@ zpool_do_checkpoint(int argc, char **argv)
 }
 
 #define	CHECKPOINT_OPT	1024
+#define COMMITMENT_LEN 64
+
+/*
+ * convert hex string commitment to integers
+ */
+
+
 
 /*
  * zpool import [-d dir] [-D]
@@ -3778,13 +3785,17 @@ zpool_do_import(int argc, char **argv)
 	importargs_t idata = { 0 };
 	char *endptr;
 
+	// -C <commitment hex string>
+	// little endian
+	char *commitment_hex = NULL;
+
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
 		{0, 0, 0, 0}
 	};
 
 	/* check options */
-	while ((c = getopt_long(argc, argv, ":aCc:d:DEfFlmnNo:R:stT:VX",
+	while ((c = getopt_long(argc, argv, ":aC:c:d:DEfFlmnNo:R:stT:VX",
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'a':
@@ -3866,6 +3877,19 @@ zpool_do_import(int argc, char **argv)
 			break;
 		case CHECKPOINT_OPT:
 			flags |= ZFS_IMPORT_CHECKPOINT;
+			break;
+		case 'C':
+			commitment_hex = optarg;
+			size_t len = strlen(commitment_hex);
+			// incorrect string length
+			// TODO magic number
+			if (len != COMMITMENT_LEN) {
+				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %d, but received '%zu'\n"), COMMITMENT_LEN, len);
+				usage(B_FALSE);
+			} else {
+				fprintf(stderr, "correct size of input");
+
+			}
 			break;
 		case ':':
 			(void) fprintf(stderr, gettext("missing argument for "
