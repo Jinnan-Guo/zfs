@@ -68,6 +68,7 @@
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
 #include <string.h>
+#include <sys/zio_checksum.h>
 #include <math.h>
 
 #include <libzfs.h>
@@ -4209,8 +4210,17 @@ zpool_do_checkpoint(int argc, char **argv)
 /*
  * convert hex string commitment to integers
  */
-
-
+static void convert_hex_to_cksum(char *hex_string, zio_cksum_t *commitment_cksum) {
+	for (int i = 0; i < 4; i++) {
+		uint64_t value = 0;
+		for (int j = 0; j < 8; j++) {
+			unsigned int byte;
+			sscanf(hex_string + (i * 16) + j * 2, "%2x", &byte);
+			value |= ((uint64_t)byte << (j * 8));
+		}
+		commitment_cksum->zc_word[i] = value;
+	}
+}
 
 /*
  * zpool prefetch <type> [<type opts>] <pool>
@@ -4366,6 +4376,9 @@ zpool_do_import(int argc, char **argv)
 	// little endian
 	char *commitment_hex = NULL;
 
+	// commitment in zfs checksum format
+	zio_cksum_t commitment_cksum;
+
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
 		{0, 0, 0, 0}
@@ -4459,13 +4472,12 @@ zpool_do_import(int argc, char **argv)
 			commitment_hex = optarg;
 			size_t len = strlen(commitment_hex);
 			// incorrect string length
-			// TODO magic number
 			if (len != COMMITMENT_LEN) {
 				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %d, but received '%zu'\n"), COMMITMENT_LEN, len);
 				usage(B_FALSE);
 			} else {
-				fprintf(stderr, "correct size of input");
-
+				// convert hex string commitment to zio checksum format
+				convert_hex_to_cksum(commitment_hex, &commitment_cksum);
 			}
 			break;
 		case ':':
