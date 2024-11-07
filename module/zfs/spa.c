@@ -6769,6 +6769,10 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	spa->spa_config_source = SPA_CONFIG_SRC_TRYIMPORT;
 
+	// check commitment
+	// TODO: add state for verfied mount
+	zfs_dbgmsg("spa_load_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)policy.zlp_commitment[0], (u_longlong_t)policy.zlp_commitment[1], (u_longlong_t)policy.zlp_commitment[2], (u_longlong_t)policy.zlp_commitment[3]);
+
 	if (state != SPA_LOAD_RECOVER) {
 		spa->spa_last_ubsync_txg = spa->spa_load_txg = 0;
 		zfs_dbgmsg("spa_import: importing %s", pool);
