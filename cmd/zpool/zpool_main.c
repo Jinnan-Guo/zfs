@@ -4210,7 +4210,7 @@ zpool_do_checkpoint(int argc, char **argv)
 /*
  * convert hex string commitment to integers
  */
-static void convert_hex_to_cksum(char *hex_string, zio_cksum_t *commitment_cksum) {
+static void convert_hex_to_cksum(char *hex_string, uint64_t *commitment_array) {
 	for (int i = 0; i < 4; i++) {
 		uint64_t value = 0;
 		for (int j = 0; j < 8; j++) {
@@ -4218,7 +4218,7 @@ static void convert_hex_to_cksum(char *hex_string, zio_cksum_t *commitment_cksum
 			sscanf(hex_string + (i * 16) + j * 2, "%2x", &byte);
 			value |= ((uint64_t)byte << (j * 8));
 		}
-		commitment_cksum->zc_word[i] = value;
+		commitment_array[i] = value;
 	}
 }
 
@@ -4376,8 +4376,8 @@ zpool_do_import(int argc, char **argv)
 	// little endian
 	char *commitment_hex = NULL;
 
-	// commitment in zfs checksum format
-	zio_cksum_t commitment_cksum;
+	// commitment in uint64[4] format (same as (&zio_checksum_t)->cksum)
+	uint64_t commitment_array[4] = {0};
 
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
@@ -4477,7 +4477,10 @@ zpool_do_import(int argc, char **argv)
 				usage(B_FALSE);
 			} else {
 				// convert hex string commitment to zio checksum format
-				convert_hex_to_cksum(commitment_hex, &commitment_cksum);
+				fprintf(stderr, "correct input length\n");
+				convert_hex_to_cksum(commitment_hex, commitment_array);
+				fprintf(stderr, gettext("first element %lu\n"), commitment_array[0]);
+				fprintf(stderr, gettext("last element %lu\n"), commitment_array[3]);
 			}
 			break;
 		case ':':
@@ -4530,6 +4533,8 @@ zpool_do_import(int argc, char **argv)
 
 	/* In the future, we can capture further policy and include it here */
 	if (nvlist_alloc(&policy, NV_UNIQUE_NAME, 0) != 0 ||
+	    // add commitment array
+	    nvlist_add_uint64_array(policy, ZPOOL_LOAD_COMMITMENT, commitment_array, 4) != 0 ||
 	    nvlist_add_uint64(policy, ZPOOL_LOAD_REQUEST_TXG, txg) != 0 ||
 	    nvlist_add_uint32(policy, ZPOOL_LOAD_REWIND_POLICY,
 	    rewind_policy) != 0)
