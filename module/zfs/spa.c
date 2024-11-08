@@ -6797,8 +6797,9 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	zfs_dbgmsg("spa_load_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)policy.zlp_commitment[0], (u_longlong_t)policy.zlp_commitment[1], (u_longlong_t)policy.zlp_commitment[2], (u_longlong_t)policy.zlp_commitment[3]);
 
 	// move commitment from pool to spa
-	memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
-
+	if (policy.zlp_commitment != NULL) {
+		memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
+	}
 	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
 
 	if (state != SPA_LOAD_RECOVER) {
@@ -6929,6 +6930,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	uint64_t state;
 	int error;
 	zpool_load_policy_t policy;
+	uint64_t spa_commitment[4] = {0};
 
 	if (nvlist_lookup_string(tryconfig, ZPOOL_CONFIG_POOL_NAME, &poolname))
 		return (NULL);
@@ -6978,6 +6980,12 @@ spa_tryimport(nvlist_t *tryconfig)
 	 * the correct configuration regardless of the missing log device.
 	 */
 	spa->spa_import_flags |= ZFS_IMPORT_MISSING_LOG;
+
+	// move commitment from pool to spa
+	if (policy.zlp_commitment != NULL) {
+		memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
+	}
+	fnvlist_add_uint64_array(spa->spa_load_info, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
 
 	error = spa_load(spa, SPA_LOAD_TRYIMPORT, SPA_IMPORT_EXISTING);
 
