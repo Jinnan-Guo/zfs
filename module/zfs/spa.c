@@ -4007,13 +4007,12 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	nvlist_t *label;
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
-	/*
+
 	zio_cksum_t commitment_cksum = { .zc_word = {0} };
-	uint64_t *tmp_cksum = {0};
+	uint64_t *tmp_cksum;
 	uint_t array_len = 4;
 	nvpair_t *elem;
 	const char *nm;
-	*/
 
 	/*
 	 * If we are opening the checkpointed state of the pool by
@@ -4055,19 +4054,19 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	/*
 	 * Check uberblock's checksum against mount time commitment
 	 */
-	/*
 	elem = NULL;
-	while ((elem = nvlist_next_nvpair(spa->spa_load_info, elem)) != NULL) {
+	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
 		nm = nvpair_name(elem);
 		if (strcmp(nm, ZPOOL_CONFIG_COMMITMENT) == 0) {
 			(void) nvpair_value_uint64_array(elem, &tmp_cksum, &array_len);
 			break;
 		}
 	}
-	memcpy(commitment_cksum.zc_word, tmp_cksum, 4 * sizeof(uint64_t));
-	
+	//memcpy(commitment_cksum.zc_word, tmp_cksum, 4 * sizeof(uint64_t));
+	ZIO_SET_CHECKSUM(&commitment_cksum, tmp_cksum[0], tmp_cksum[1], tmp_cksum[2], tmp_cksum[3]);
+	//zfs_dbgmsg("spa_config_commit: %llu", (u_longlong_t)tmp_cksum[0]);
 	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
-	*/
+
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
 		    (u_longlong_t)spa->spa_load_max_txg);
@@ -6648,7 +6647,8 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	// move commitment from pool to spa
 	memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
-	fnvlist_add_uint64_array(spa->spa_load_info, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
+
+	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
 
 	if (state != SPA_LOAD_RECOVER) {
 		spa->spa_last_ubsync_txg = spa->spa_load_txg = 0;
