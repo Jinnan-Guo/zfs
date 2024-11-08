@@ -4118,6 +4118,13 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	nvlist_t *label;
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
+	/*
+	zio_cksum_t commitment_cksum = { .zc_word = {0} };
+	uint64_t *tmp_cksum = {0};
+	uint_t array_len = 4;
+	nvpair_t *elem;
+	const char *nm;
+	*/
 
 	/*
 	 * If we are opening the checkpointed state of the pool by
@@ -4156,6 +4163,22 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, ENXIO));
 	}
 
+	/*
+	 * Check uberblock's checksum against mount time commitment
+	 */
+	/*
+	elem = NULL;
+	while ((elem = nvlist_next_nvpair(spa->spa_load_info, elem)) != NULL) {
+		nm = nvpair_name(elem);
+		if (strcmp(nm, ZPOOL_CONFIG_COMMITMENT) == 0) {
+			(void) nvpair_value_uint64_array(elem, &tmp_cksum, &array_len);
+			break;
+		}
+	}
+	memcpy(commitment_cksum.zc_word, tmp_cksum, 4 * sizeof(uint64_t));
+	
+	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
+	*/
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
 		    (u_longlong_t)spa->spa_load_max_txg);
@@ -6719,6 +6742,7 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	nvlist_t *nvroot;
 	nvlist_t **spares, **l2cache;
 	uint_t nspares, nl2cache;
+	uint64_t spa_commitment[4] = {0};
 
 	/*
 	 * If a pool with this name exists, return failure.
@@ -6772,6 +6796,10 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	// check commitment
 	// TODO: add state for verfied mount
 	zfs_dbgmsg("spa_load_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)policy.zlp_commitment[0], (u_longlong_t)policy.zlp_commitment[1], (u_longlong_t)policy.zlp_commitment[2], (u_longlong_t)policy.zlp_commitment[3]);
+
+	// move commitment from pool to spa
+	memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
+	fnvlist_add_uint64_array(spa->spa_load_info, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
 
 	if (state != SPA_LOAD_RECOVER) {
 		spa->spa_last_ubsync_txg = spa->spa_load_txg = 0;
