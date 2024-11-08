@@ -4054,6 +4054,7 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	/*
 	 * Check uberblock's checksum against mount time commitment
 	 */
+	// load commitment
 	elem = NULL;
 	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
 		nm = nvpair_name(elem);
@@ -4062,11 +4063,15 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 			break;
 		}
 	}
-	//memcpy(commitment_cksum.zc_word, tmp_cksum, 4 * sizeof(uint64_t));
 	ZIO_SET_CHECKSUM(&commitment_cksum, tmp_cksum[0], tmp_cksum[1], tmp_cksum[2], tmp_cksum[3]);
-	//zfs_dbgmsg("spa_config_commit: %llu", (u_longlong_t)tmp_cksum[0]);
 	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
-
+	// compare commitment with ub checksum
+	// if commitment not [equal or commitment is {0}]
+	if (!ZIO_CHECKSUM_EQUAL(commitment_cksum, ub->ub_rootbp.blk_cksum)) {
+		zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
+		zfs_dbgmsg("uberblock_checksum: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
+	}
+	
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
 		    (u_longlong_t)spa->spa_load_max_txg);
