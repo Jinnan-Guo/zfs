@@ -6641,10 +6641,6 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	spa->spa_config_source = SPA_CONFIG_SRC_TRYIMPORT;
 
-	// check commitment
-	// TODO: add state for verfied mount
-	zfs_dbgmsg("spa_load_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)policy.zlp_commitment[0], (u_longlong_t)policy.zlp_commitment[1], (u_longlong_t)policy.zlp_commitment[2], (u_longlong_t)policy.zlp_commitment[3]);
-
 	// move commitment from pool to spa
 	if (policy.zlp_commitment != NULL) {
 		memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
@@ -6827,7 +6823,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	if (policy.zlp_commitment != NULL) {
 		memcpy(spa_commitment, policy.zlp_commitment, 4 * sizeof(uint64_t));
 	}
-	fnvlist_add_uint64_array(spa->spa_load_info, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
+	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_COMMITMENT, spa_commitment, 4);
 
 	error = spa_load(spa, SPA_LOAD_TRYIMPORT, SPA_IMPORT_EXISTING);
 
