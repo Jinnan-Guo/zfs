@@ -4009,6 +4009,7 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	boolean_t activity_check = B_FALSE;
 
 	zio_cksum_t commitment_cksum = { .zc_word = {0} };
+	zio_cksum_t default_cksum = { .zc_word = {0} };
 	uint64_t *tmp_cksum;
 	uint_t array_len = 4;
 	nvpair_t *elem;
@@ -4067,7 +4068,8 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
 	// compare commitment with ub checksum
 	// if commitment not [equal or commitment is {0}]
-	if (!ZIO_CHECKSUM_EQUAL(commitment_cksum, ub->ub_rootbp.blk_cksum)) {
+	if (!ZIO_CHECKSUM_EQUAL(commitment_cksum, ub->ub_rootbp.blk_cksum) && !ZIO_CHECKSUM_EQUAL(commitment_cksum, default_cksum)) {
+		zfs_dbgmsg("ERROR: commitment mismatch!");
 		zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
 		zfs_dbgmsg("uberblock_checksum: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
 	}
