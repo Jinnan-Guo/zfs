@@ -4181,8 +4181,12 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	// if commitment not [equal or commitment is {0}]
 	if (!ZIO_CHECKSUM_EQUAL(commitment_cksum, ub->ub_rootbp.blk_cksum) && !ZIO_CHECKSUM_EQUAL(commitment_cksum, default_cksum)) {
 		zfs_dbgmsg("ERROR: commitment mismatch!");
-		zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
+		zfs_dbgmsg("mount_commitment: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)commitment_cksum.zc_word[0], (u_longlong_t)commitment_cksum.zc_word[1], (u_longlong_t)commitment_cksum.zc_word[2], (u_longlong_t)commitment_cksum.zc_word[3]);
 		zfs_dbgmsg("uberblock_checksum: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
+		return SET_ERROR(EINVAL);
+	}
+	else {
+		zfs_dbgmsg("COMMITMENT VERFICATION SUCCESSFUL!");
 	}
 	
 	if (spa->spa_load_max_txg != UINT64_MAX) {
