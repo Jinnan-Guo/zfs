@@ -4215,8 +4215,8 @@ static void convert_hex_to_cksum(char *hex_string, uint64_t *commitment_array) {
 		uint64_t value = 0;
 		for (int j = 0; j < 8; j++) {
 			unsigned int byte;
-			sscanf(hex_string + (i * 16) + j * 2, "%2x", &byte);
-			value |= ((uint64_t)byte << (j * 8));
+			sscanf(hex_string + (i * 16) + (j * 2), "%2x", &byte);
+			value = (value << 8) | (uint64_t)(byte & 0xFF);
 		}
 		commitment_array[i] = value;
 	}
