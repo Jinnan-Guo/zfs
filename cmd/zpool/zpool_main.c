@@ -4479,8 +4479,6 @@ zpool_do_import(int argc, char **argv)
 				// convert hex string commitment to zio checksum format
 				fprintf(stderr, "correct input length\n");
 				convert_hex_to_cksum(commitment_hex, commitment_array);
-				fprintf(stderr, gettext("first element %lu\n"), commitment_array[0]);
-				fprintf(stderr, gettext("last element %lu\n"), commitment_array[3]);
 			}
 			break;
 		case ':':
