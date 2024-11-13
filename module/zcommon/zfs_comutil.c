@@ -107,7 +107,7 @@ zpool_get_load_policy(nvlist_t *nvl, zpool_load_policy_t *zlpp)
 	zlpp->zlp_maxmeta = 0;
 	zlpp->zlp_maxdata = UINT64_MAX;
 	zlpp->zlp_txg = UINT64_MAX;
-	zlpp->zlp_commitment = NULL;
+	zlpp->zlp_ub_commitment = NULL;
 
 	if (nvl == NULL)
 		return;
@@ -119,8 +119,8 @@ zpool_get_load_policy(nvlist_t *nvl, zpool_load_policy_t *zlpp)
 			if (nvpair_value_nvlist(elem, &policy) == 0)
 				zpool_get_load_policy(policy, zlpp);
 			return;
-		} else if (strcmp(nm, ZPOOL_LOAD_COMMITMENT) == 0) {
-			(void) nvpair_value_uint64_array(elem, &zlpp->zlp_commitment, &array_len);
+		} else if (strcmp(nm, ZPOOL_LOAD_UB_COMMITMENT) == 0) {
+			(void) nvpair_value_uint64_array(elem, &zlpp->zlp_ub_commitment, &array_len);
 		} else if (strcmp(nm, ZPOOL_LOAD_REWIND_POLICY) == 0) {
 			if (nvpair_value_uint32(elem, &zlpp->zlp_rewind) == 0)
 				if (zlpp->zlp_rewind & ~ZPOOL_REWIND_POLICIES)

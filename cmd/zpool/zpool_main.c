@@ -4532,7 +4532,7 @@ zpool_do_import(int argc, char **argv)
 	/* In the future, we can capture further policy and include it here */
 	if (nvlist_alloc(&policy, NV_UNIQUE_NAME, 0) != 0 ||
 	    // add commitment array
-	    nvlist_add_uint64_array(policy, ZPOOL_LOAD_COMMITMENT, commitment_array, 4) != 0 ||
+	    nvlist_add_uint64_array(policy, ZPOOL_LOAD_UB_COMMITMENT, commitment_array, 4) != 0 ||
 	    nvlist_add_uint64(policy, ZPOOL_LOAD_REQUEST_TXG, txg) != 0 ||
 	    nvlist_add_uint32(policy, ZPOOL_LOAD_REWIND_POLICY,
 	    rewind_policy) != 0)
