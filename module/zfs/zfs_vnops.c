@@ -106,11 +106,7 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 		if ((error = zfs_enter_verify_zp(zfsvfs, zp, FTAG)) != 0)
 			return (error);
 		atomic_inc_32(&zp->z_sync_writes_cnt);
-		// place holder for commitment
-		hrtime_t ms_delay = 10;
 		zil_commit(zfsvfs->z_log, zp->z_id);
-		// place holder for commitment
-		zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
 		atomic_dec_32(&zp->z_sync_writes_cnt);
 		zfs_exit(zfsvfs, FTAG);
 	}
