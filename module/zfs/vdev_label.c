@@ -2034,11 +2034,29 @@ retry:
 	}
 
 	/*
-	 * Place for prepare() callback
-	 * We do prepare() right before the uberblock update
+	 * Print new ub info
 	 */
-	hrtime_t ms_delay = 10;
-	zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
+	
+	zfs_dbgmsg("ub_print:magic number: %llu\n", (u_longlong_t)ub->ub_magic);
+	zfs_dbgmsg("ub_print:version: %llu\n", (u_longlong_t)ub->ub_version);
+	zfs_dbgmsg("ub_print:txg: %llu\n", (u_longlong_t)ub->ub_txg);
+	zfs_dbgmsg("ub_print:guid sum: %llu\n", (u_longlong_t)ub->ub_guid_sum);
+	zfs_dbgmsg("ub_print:timestamp: %llu\n", (u_longlong_t)ub->ub_timestamp);
+	// blkptr
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->blkprop: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_prop);
+	zfs_dbgmsg("ub_print:rootbp->blk_pad: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_pad[0], (u_longlong_t)ub->ub_rootbp.blk_pad[1]);
+	zfs_dbgmsg("ub_print:rootbp->blk_phys_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
+	zfs_dbgmsg("ub_print:rootbp->blk_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
+	zfs_dbgmsg("ub_print:rootbp->blk_fill: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_fill);
+	zfs_dbgmsg("ub_print:rootbp->blk_cksum: %llu:%llu:%llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
+	zfs_dbgmsg("ub_print:mmp magic: %llu\n", (u_longlong_t)ub->ub_mmp_magic);
+	zfs_dbgmsg("ub_print:mmp delay: %llu\n", (u_longlong_t)ub->ub_mmp_delay);
+	zfs_dbgmsg("ub_print:mmp config: %llu\n", (u_longlong_t)ub->ub_mmp_config);
+	zfs_dbgmsg("ub_print:checkpoint txg: %llu\n", (u_longlong_t)ub->ub_checkpoint_txg);
+
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].
@@ -2065,12 +2083,6 @@ retry:
 
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, ub);
-
-	/*
-	 * Place for commit() callback
-	 * We do commit() right after the uberblock update
-	 */
-	zfs_sleep_until(gethrtime() + MSEC2NSEC(ms_delay));
 
 	/*
 	 * Sync out odd labels for every dirty vdev.  If the system dies
