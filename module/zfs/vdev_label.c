@@ -2151,6 +2151,19 @@ retry:
 	 */
 
 	ub_print(ub);
+	
+	/*
+	 * Convert and print
+	 */
+	const uint64_t *ub_data = (const uint64_t *)ub;
+	//size_t buf_size = 26*16 + 1;
+	char hex_str[417];
+	char *ptr = hex_str;
+	for (size_t i = 0; i < 26; i++) {
+		ptr += snprintf(ptr, 417 - (ptr - hex_str), "%016llx", (u_longlong_t)ub_data[i]);
+	}
+	*ptr = '\0';  // Null-terminate the string
+	zfs_dbgmsg("serialized ub %s", hex_str);
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].
