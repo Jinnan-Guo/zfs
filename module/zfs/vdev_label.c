@@ -156,6 +156,33 @@
 #include <sys/zfs_bootenv.h>
 
 /*
+ * print new ub info
+ */
+static void
+ub_print(uberblock_t *ub)
+{
+	zfs_dbgmsg("ub_print:magic number: %llu\n", (u_longlong_t)ub->ub_magic);
+	zfs_dbgmsg("ub_print:version: %llu\n", (u_longlong_t)ub->ub_version);
+	zfs_dbgmsg("ub_print:txg: %llu\n", (u_longlong_t)ub->ub_txg);
+	zfs_dbgmsg("ub_print:guid sum: %llu\n", (u_longlong_t)ub->ub_guid_sum);
+	zfs_dbgmsg("ub_print:timestamp: %llu\n", (u_longlong_t)ub->ub_timestamp);
+	// blkptr
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[1]);
+	zfs_dbgmsg("ub_print:rootbp->blkprop: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_prop);
+	zfs_dbgmsg("ub_print:rootbp->blk_pad: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_pad[0], (u_longlong_t)ub->ub_rootbp.blk_pad[1]);
+	zfs_dbgmsg("ub_print:rootbp->blk_phys_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
+	zfs_dbgmsg("ub_print:rootbp->blk_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
+	zfs_dbgmsg("ub_print:rootbp->blk_fill: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_fill);
+	zfs_dbgmsg("ub_print:rootbp->blk_cksum: %llu:%llu:%llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
+	zfs_dbgmsg("ub_print:mmp magic: %llu\n", (u_longlong_t)ub->ub_mmp_magic);
+	zfs_dbgmsg("ub_print:mmp delay: %llu\n", (u_longlong_t)ub->ub_mmp_delay);
+	zfs_dbgmsg("ub_print:mmp config: %llu\n", (u_longlong_t)ub->ub_mmp_config);
+	zfs_dbgmsg("ub_print:checkpoint txg: %llu\n", (u_longlong_t)ub->ub_checkpoint_txg);
+}
+
+/*
  * Basic routines to read and write from a vdev label.
  * Used throughout the rest of this file.
  */
@@ -2122,6 +2149,8 @@ retry:
 	/*
 	 * Place for prepare() callback
 	 */
+
+	ub_print(ub);
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].
