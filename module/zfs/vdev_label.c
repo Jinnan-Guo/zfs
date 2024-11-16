@@ -2119,9 +2119,6 @@ retry:
 		goto retry;
 	}
 
-	/*
-	 * Place for prepare() callback
-	 */
 
 	uberblock_dump(ub);
 
@@ -2134,33 +2131,8 @@ retry:
 	zfs_dbgmsg("serialized ub %s", ub_hex->hex_str);
 
 	/*
-	 * ub_deserialize
-	 *
-	char *hex_str = ub_hex->hex_str;
-	uint64_t restore_ub[26] = {0};
-	for (int i = 0; i < 26; i ++) {
-		uint64_t result = 0;
-		for (int j = 0; j < 16; j ++) {
-			uint64_t tmp;
-			int index = i*16 + j;
-			if (hex_str[index] >= '0' && hex_str[index] <= '9') {
-				tmp = hex_str[index] - '0';
-			}
-			else if (hex_str[index] >= 'a' && hex_str[index] <= 'f') {
-				tmp = hex_str[index] - 'a' + 10;
-			}
-			else {
-				tmp = 0;
-			}
-			result = (result << 4) | tmp;
-		}
-		restore_ub[i] = result;
-	}
-
-	for (int i = 0; i < 26; i ++) {
-		zfs_dbgmsg("restored_ub[%d]: %llu", i, (u_longlong_t)restore_ub[i]);
-	}
-	*/
+	 * uberblock deserialization
+	 */
 	uberblock_deserialize(ub, ub_hex);
 	kmem_free(ub_hex, sizeof(*ub_hex));
 	uberblock_dump(ub);
