@@ -109,6 +109,8 @@ typedef enum raidz_reflow_scratch_state {
 	RRSS_SET_STATE(ub, state); \
 } while (0)
 
+#define UBERBLOCK_HEX_BUF_SIZE	UBERBLOCK_SIZE * HEX_PER_UINT64 + 1
+
 struct uberblock {
 	uint64_t	ub_magic;	/* UBERBLOCK_MAGIC		*/
 	uint64_t	ub_version;	/* SPA_VERSION			*/
@@ -172,6 +174,13 @@ struct uberblock {
 	uint64_t	ub_checkpoint_txg;
 
 	uint64_t	ub_raidz_reflow_info;
+};
+
+/*
+ * struct for serialized ub
+ */
+struct uberblock_hex {
+	char hex_str[UBERBLOCK_HEX_BUF_SIZE];
 };
 
 #ifdef	__cplusplus
