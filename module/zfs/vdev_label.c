@@ -154,33 +154,6 @@
 #include <sys/zfs_bootenv.h>
 
 /*
- * print new ub info
- */
-static void
-ub_print(uberblock_t *ub)
-{
-	zfs_dbgmsg("ub_print:magic number: %llu\n", (u_longlong_t)ub->ub_magic);
-	zfs_dbgmsg("ub_print:version: %llu\n", (u_longlong_t)ub->ub_version);
-	zfs_dbgmsg("ub_print:txg: %llu\n", (u_longlong_t)ub->ub_txg);
-	zfs_dbgmsg("ub_print:guid sum: %llu\n", (u_longlong_t)ub->ub_guid_sum);
-	zfs_dbgmsg("ub_print:timestamp: %llu\n", (u_longlong_t)ub->ub_timestamp);
-	// blkptr
-	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[0].dva_word[1]);
-	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[1].dva_word[1]);
-	zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[1]);
-	zfs_dbgmsg("ub_print:rootbp->blkprop: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_prop);
-	zfs_dbgmsg("ub_print:rootbp->blk_pad: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_pad[0], (u_longlong_t)ub->ub_rootbp.blk_pad[1]);
-	zfs_dbgmsg("ub_print:rootbp->blk_phys_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
-	zfs_dbgmsg("ub_print:rootbp->blk_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
-	zfs_dbgmsg("ub_print:rootbp->blk_fill: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_fill);
-	zfs_dbgmsg("ub_print:rootbp->blk_cksum: %llu:%llu:%llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
-	zfs_dbgmsg("ub_print:mmp magic: %llu\n", (u_longlong_t)ub->ub_mmp_magic);
-	zfs_dbgmsg("ub_print:mmp delay: %llu\n", (u_longlong_t)ub->ub_mmp_delay);
-	zfs_dbgmsg("ub_print:mmp config: %llu\n", (u_longlong_t)ub->ub_mmp_config);
-	zfs_dbgmsg("ub_print:checkpoint txg: %llu\n", (u_longlong_t)ub->ub_checkpoint_txg);
-}
-
-/*
  * Basic routines to read and write from a vdev label.
  * Used throughout the rest of this file.
  */
@@ -2063,20 +2036,47 @@ retry:
 	/*
 	 * Print new ub info
 	 */
-	ub_print(ub);
+	uberblock_dump(ub);
 	
 	/*
-	 * Convert and print
+	 * uberblock serialization
 	 */
-	const uint64_t *ub_data = (const uint64_t *)ub;
-	//size_t buf_size = 26*16 + 1;
-	char hex_str[417];
-	char *ptr = hex_str;
-	for (size_t i = 0; i < 26; i++) {
-		ptr += snprintf(ptr, 417 - (ptr - hex_str), "%016llx", (u_longlong_t)ub_data[i]);
+	uberblock_hex_t *ub_hex;
+	ub_hex = kmem_alloc(sizeof(*ub_hex), KM_SLEEP);
+	uberblock_serialize(ub, ub_hex);
+	zfs_dbgmsg("serialized ub %s", ub_hex->hex_str);
+
+	/*
+	 * ub_deserialize
+	 *
+	char *hex_str = ub_hex->hex_str;
+	uint64_t restore_ub[26] = {0};
+	for (int i = 0; i < 26; i ++) {
+		uint64_t result = 0;
+		for (int j = 0; j < 16; j ++) {
+			uint64_t tmp;
+			int index = i*16 + j;
+			if (hex_str[index] >= '0' && hex_str[index] <= '9') {
+				tmp = hex_str[index] - '0';
+			}
+			else if (hex_str[index] >= 'a' && hex_str[index] <= 'f') {
+				tmp = hex_str[index] - 'a' + 10;
+			}
+			else {
+				tmp = 0;
+			}
+			result = (result << 4) | tmp;
+		}
+		restore_ub[i] = result;
 	}
-	*ptr = '\0';  // Null-terminate the string
-	zfs_dbgmsg("serialized ub %s", hex_str);
+
+	for (int i = 0; i < 26; i ++) {
+		zfs_dbgmsg("restored_ub[%d]: %llu", i, (u_longlong_t)restore_ub[i]);
+	}
+	*/
+	uberblock_deserialize(ub, ub_hex);
+	kmem_free(ub_hex, sizeof(*ub_hex));
+	uberblock_dump(ub);
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].
