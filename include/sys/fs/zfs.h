@@ -692,7 +692,7 @@ typedef struct zpool_load_policy {
 	uint64_t	zlp_maxmeta;	/* max acceptable meta-data errors */
 	uint64_t	zlp_maxdata;	/* max acceptable data errors */
 	uint64_t	zlp_txg;	/* specific txg to load */
-	uint64_t	*zlp_ub_commitment;/* pool commitment when load */
+	const char	*zlp_ub_commitment;	/* pool commitment when load */
 } zpool_load_policy_t;
 
 /*

@@ -2044,6 +2044,10 @@ retry:
 	zfs_dbgmsg("serialized ub %s", ub_hex->hex_str);
 
 	/*
+	 * submit serialized uberblock to ledger
+	 */
+
+	/*
 	 * uberblock deserialization
 	 */
 	uberblock_deserialize(ub, ub_hex);
