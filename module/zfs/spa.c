@@ -4072,6 +4072,7 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		uberblock_serialize(ub, ub_selected_hex);
 		if (strcmp(ub_commitment_hex, ub_selected_hex->hex_str) == 0) {
 			zfs_dbgmsg("commitment verification successful. uberblock in hex: %s", ub_commitment_hex);
+			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
 		} else {
 			zfs_dbgmsg("ERROR: uberblock mismatch!");
 			zfs_dbgmsg("user provided uberblock in hex: %s", ub_commitment_hex);
