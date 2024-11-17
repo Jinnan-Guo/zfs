@@ -4119,11 +4119,9 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
 
-	zio_cksum_t ub_commitment_cksum = { .zc_word = {0} };
-	zio_cksum_t default_cksum = { .zc_word = {0} };
-	uint64_t *tmp_cksum;
-	uint_t array_len = 4;
-	nvpair_t *elem;
+	const char *ub_commitment_hex = NULL;
+	uberblock_hex_t *ub_selected_hex = NULL;
+	nvpair_t *elem = NULL;
 	const char *nm;
 
 	/*
@@ -4167,14 +4165,33 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	 * Check uberblock's checksum against mount time commitment
 	 */
 	// load commitment
-	elem = NULL;
 	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
 		nm = nvpair_name(elem);
 		if (strcmp(nm, ZPOOL_CONFIG_UB_COMMITMENT) == 0) {
-			(void) nvpair_value_uint64_array(elem, &tmp_cksum, &array_len);
+			// nvpair handles the memory lifecycle, so you dont need to malloc space for ub_commitment_hex
+			(void) nvpair_value_string(elem, &ub_commitment_hex);
 			break;
 		}
 	}
+	
+	if (ub_commitment_hex == NULL) {
+		zfs_dbgmsg("no commitment provided. bypass commitment verification");
+	} else {
+		// check if provided uberblock matches selected one
+		zfs_dbgmsg("commitment provided: %s", ub_commitment_hex);
+		ub_selected_hex = kmem_alloc(sizeof(*ub_selected_hex), KM_SLEEP);
+		uberblock_serialize(ub, ub_selected_hex);
+		if (strcmp(ub_commitment_hex, ub_selected_hex->hex_str) == 0) {
+			zfs_dbgmsg("commitment verification successful. uberblock in hex: %s", ub_commitment_hex);
+		} else {
+			zfs_dbgmsg("ERROR: uberblock mismatch!");
+			zfs_dbgmsg("user provided uberblock in hex: %s", ub_commitment_hex);
+			zfs_dbgmsg("selected uberblock by zfs: %s", ub_selected_hex->hex_str);
+			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
+			return SET_ERROR(EINVAL);
+		}
+	}
+	/*
 	ZIO_SET_CHECKSUM(&ub_commitment_cksum, tmp_cksum[0], tmp_cksum[1], tmp_cksum[2], tmp_cksum[3]);
 	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub_commitment_cksum.zc_word[0], (u_longlong_t)ub_commitment_cksum.zc_word[1], (u_longlong_t)ub_commitment_cksum.zc_word[2], (u_longlong_t)ub_commitment_cksum.zc_word[3]);
 	// compare commitment with ub checksum
@@ -4188,6 +4205,7 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	else {
 		zfs_dbgmsg("COMMITMENT VERFICATION SUCCESSFUL!");
 	}
+	*/
 	
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
@@ -6752,7 +6770,6 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	nvlist_t *nvroot;
 	nvlist_t **spares, **l2cache;
 	uint_t nspares, nl2cache;
-	uint64_t spa_ub_commitment[4] = {0};
 
 	/*
 	 * If a pool with this name exists, return failure.
@@ -6805,9 +6822,8 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	// move commitment from pool to spa
 	if (policy.zlp_ub_commitment != NULL) {
-		memcpy(spa_ub_commitment, policy.zlp_ub_commitment, 4 * sizeof(uint64_t));
+		fnvlist_add_string(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, policy.zlp_ub_commitment);
 	}
-	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, spa_ub_commitment, 4);
 
 	if (state != SPA_LOAD_RECOVER) {
 		spa->spa_last_ubsync_txg = spa->spa_load_txg = 0;
@@ -6937,8 +6953,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	uint64_t state;
 	int error;
 	zpool_load_policy_t policy;
-	uint64_t spa_ub_commitment[4] = {0};
-
+	
 	if (nvlist_lookup_string(tryconfig, ZPOOL_CONFIG_POOL_NAME, &poolname))
 		return (NULL);
 
@@ -6990,9 +7005,8 @@ spa_tryimport(nvlist_t *tryconfig)
 
 	// move commitment from pool to spa
 	if (policy.zlp_ub_commitment != NULL) {
-		memcpy(spa_ub_commitment, policy.zlp_ub_commitment, 4 * sizeof(uint64_t));
+		fnvlist_add_string(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, policy.zlp_ub_commitment);
 	}
-	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, spa_ub_commitment, 4);
 
 	error = spa_load(spa, SPA_LOAD_TRYIMPORT, SPA_IMPORT_EXISTING);
 
