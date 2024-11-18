@@ -65,7 +65,7 @@
 #include <sys/zfs_ioctl.h>
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
-
+#include <sys/zio_checksum.h>
 #include <math.h>
 
 #include <libzfs.h>
@@ -3692,6 +3692,22 @@ zpool_do_checkpoint(int argc, char **argv)
 }
 
 #define	CHECKPOINT_OPT	1024
+#define COMMITMENT_LEN 64
+
+/*
+ * convert hex string commitment to integers
+ */
+static void convert_hex_to_cksum(char *hex_string, uint64_t *commitment_array) {
+	for (int i = 0; i < 4; i++) {
+		uint64_t value = 0;
+		for (int j = 0; j < 8; j++) {
+			unsigned int byte;
+			sscanf(hex_string + (i * 16) + (j * 2), "%2x", &byte);
+			value = (value << 8) | (uint64_t)(byte & 0xFF);
+		}
+		commitment_array[i] = value;
+	}
+}
 
 /*
  * zpool import [-d dir] [-D]
@@ -3778,13 +3794,20 @@ zpool_do_import(int argc, char **argv)
 	importargs_t idata = { 0 };
 	char *endptr;
 
+	// -C <commitment hex string>
+	// little endian
+	char *commitment_hex = NULL;
+
+	// commitment in uint64[4] format (same as (&zio_checksum_t)->cksum)
+	uint64_t commitment_array[4] = {0};
+
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
 		{0, 0, 0, 0}
 	};
 
 	/* check options */
-	while ((c = getopt_long(argc, argv, ":aCc:d:DEfFlmnNo:R:stT:VX",
+	while ((c = getopt_long(argc, argv, ":aC:c:d:DEfFlmnNo:R:stT:VX",
 	    long_options, NULL)) != -1) {
 		switch (c) {
 		case 'a':
@@ -3867,6 +3890,19 @@ zpool_do_import(int argc, char **argv)
 		case CHECKPOINT_OPT:
 			flags |= ZFS_IMPORT_CHECKPOINT;
 			break;
+		case 'C':
+			commitment_hex = optarg;
+			size_t len = strlen(commitment_hex);
+			// incorrect string length
+			if (len != COMMITMENT_LEN) {
+				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %d, but received '%zu'\n"), COMMITMENT_LEN, len);
+				usage(B_FALSE);
+			} else {
+				// convert hex string commitment to zio checksum format
+				fprintf(stderr, "correct input length\n");
+				convert_hex_to_cksum(commitment_hex, commitment_array);
+			}
+			break;
 		case ':':
 			(void) fprintf(stderr, gettext("missing argument for "
 			    "'%c' option\n"), optopt);
@@ -3917,6 +3953,8 @@ zpool_do_import(int argc, char **argv)
 
 	/* In the future, we can capture further policy and include it here */
 	if (nvlist_alloc(&policy, NV_UNIQUE_NAME, 0) != 0 ||
+	    // add commitment array
+	    nvlist_add_uint64_array(policy, ZPOOL_LOAD_UB_COMMITMENT, commitment_array, 4) != 0 ||
 	    nvlist_add_uint64(policy, ZPOOL_LOAD_REQUEST_TXG, txg) != 0 ||
 	    nvlist_add_uint32(policy, ZPOOL_LOAD_REWIND_POLICY,
 	    rewind_policy) != 0)

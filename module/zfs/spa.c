@@ -4008,6 +4008,13 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
 
+	zio_cksum_t ub_commitment_cksum = { .zc_word = {0} };
+	zio_cksum_t default_cksum = { .zc_word = {0} };
+	uint64_t *tmp_cksum;
+	uint_t array_len = 4;
+	nvpair_t *elem;
+	const char *nm;
+
 	/*
 	 * If we are opening the checkpointed state of the pool by
 	 * rewinding to it, at this point we will have written the
@@ -4045,6 +4052,32 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, ENXIO));
 	}
 
+	/*
+	 * Check uberblock's checksum against mount time commitment
+	 */
+	// load commitment
+	elem = NULL;
+	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
+		nm = nvpair_name(elem);
+		if (strcmp(nm, ZPOOL_CONFIG_UB_COMMITMENT) == 0) {
+			(void) nvpair_value_uint64_array(elem, &tmp_cksum, &array_len);
+			break;
+		}
+	}
+	ZIO_SET_CHECKSUM(&ub_commitment_cksum, tmp_cksum[0], tmp_cksum[1], tmp_cksum[2], tmp_cksum[3]);
+	zfs_dbgmsg("spa_config_commit: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub_commitment_cksum.zc_word[0], (u_longlong_t)ub_commitment_cksum.zc_word[1], (u_longlong_t)ub_commitment_cksum.zc_word[2], (u_longlong_t)ub_commitment_cksum.zc_word[3]);
+	// compare commitment with ub checksum
+	// if commitment not [equal or commitment is {0}]
+	if (!ZIO_CHECKSUM_EQUAL(ub_commitment_cksum, ub->ub_rootbp.blk_cksum) && !ZIO_CHECKSUM_EQUAL(ub_commitment_cksum, default_cksum)) {
+		zfs_dbgmsg("ERROR: commitment mismatch!");
+		zfs_dbgmsg("mount_commitment: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub_commitment_cksum.zc_word[0], (u_longlong_t)ub_commitment_cksum.zc_word[1], (u_longlong_t)ub_commitment_cksum.zc_word[2], (u_longlong_t)ub_commitment_cksum.zc_word[3]);
+		zfs_dbgmsg("uberblock_checksum: commitment in integer %llu; %llu; %llu; %llu", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
+		return SET_ERROR(EINVAL);
+	}
+	else {
+		zfs_dbgmsg("COMMITMENT VERFICATION SUCCESSFUL!");
+	}
+	
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
 		    (u_longlong_t)spa->spa_load_max_txg);
@@ -6568,6 +6601,7 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	nvlist_t *nvroot;
 	nvlist_t **spares, **l2cache;
 	uint_t nspares, nl2cache;
+	uint64_t spa_ub_commitment[4] = {0};
 
 	/*
 	 * If a pool with this name exists, return failure.
@@ -6617,6 +6651,12 @@ spa_import(char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 		state = SPA_LOAD_RECOVER;
 
 	spa->spa_config_source = SPA_CONFIG_SRC_TRYIMPORT;
+
+	// move commitment from pool to spa
+	if (policy.zlp_ub_commitment != NULL) {
+		memcpy(spa_ub_commitment, policy.zlp_ub_commitment, 4 * sizeof(uint64_t));
+	}
+	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, spa_ub_commitment, 4);
 
 	if (state != SPA_LOAD_RECOVER) {
 		spa->spa_last_ubsync_txg = spa->spa_load_txg = 0;
@@ -6744,6 +6784,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	uint64_t state;
 	int error;
 	zpool_load_policy_t policy;
+	uint64_t spa_ub_commitment[4] = {0};
 
 	if (nvlist_lookup_string(tryconfig, ZPOOL_CONFIG_POOL_NAME, &poolname))
 		return (NULL);
@@ -6788,6 +6829,12 @@ spa_tryimport(nvlist_t *tryconfig)
 	 * the correct configuration regardless of the missing log device.
 	 */
 	spa->spa_import_flags |= ZFS_IMPORT_MISSING_LOG;
+
+	// move commitment from pool to spa
+	if (policy.zlp_ub_commitment != NULL) {
+		memcpy(spa_ub_commitment, policy.zlp_ub_commitment, 4 * sizeof(uint64_t));
+	}
+	fnvlist_add_uint64_array(spa->spa_config, ZPOOL_CONFIG_UB_COMMITMENT, spa_ub_commitment, 4);
 
 	error = spa_load(spa, SPA_LOAD_TRYIMPORT, SPA_IMPORT_EXISTING);
 
