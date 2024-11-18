@@ -3881,6 +3881,8 @@ zpool_do_import(int argc, char **argv)
 			} else {
 				// convert hex string commitment to zio checksum format
 				fprintf(stderr, "correct input length\n");
+				// make sure there is no rollback/recovery when spa_load fails.
+				rewind_policy = ZPOOL_NEVER_REWIND;
 			}
 			break;
 		case ':':
