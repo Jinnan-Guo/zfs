@@ -2045,6 +2045,8 @@ retry:
 
 	/*
 	 * submit serialized uberblock to ledger
+	 * expose API? kernel->userspace->API()
+	 * result = Submit(*ub_hex)
 	 */
 
 	/*
