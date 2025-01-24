@@ -2128,7 +2128,7 @@ retry:
 	uberblock_hex_t *ub_hex;
 	ub_hex = kmem_alloc(sizeof(*ub_hex), KM_SLEEP);
 	uberblock_serialize(ub, ub_hex);
-	zfs_dbgmsg("serialized ub %s", ub_hex->hex_str);
+	zfs_dbgmsg("serialized_uberblock %s", ub_hex->hex_str);
 
 	/*
 	 * submit serialized uberblock to ledger
