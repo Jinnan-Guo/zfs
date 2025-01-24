@@ -4122,7 +4122,7 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	const char *ub_commitment_nvpair = NULL; 
 	uberblock_hex_t *ub_commitment_hex = NULL;
 	uberblock_hex_t *ub_selected_hex = NULL;
-	uberblock_t *ub_commitment = NULL
+	uberblock_t *ub_commitment = NULL;
 	nvpair_t *elem = NULL;
 	const char *nm;
 
@@ -4200,13 +4200,13 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
 			// restore if the provided ub is fresher
 			ub_commitment = kmem_alloc(sizeof(uberblock_t), KM_SLEEP);
-			uberblock_deserialize(ub_commit, ub_hex);
+			uberblock_deserialize(ub_commitment, ub_commitment_hex);
 			if (ub_commitment->ub_txg > ub->ub_txg) {
-				zfs_dbgmsg("provided uberblock txg: %d, selected uberblock txg: %d", ub_commitment_hex->ub_txg, ub->ub_txg);
+				zfs_dbgmsg("provided uberblock txg: %llu, selected uberblock txg: %llu", (u_longlong_t)ub_commitment->ub_txg, (u_longlong_t)ub->ub_txg);
 				// update ub in memory
 				// TODO: do we need to write this ub to disk, or we update in-memory structure, and wait txg sync to write more fresher ub?
 				// TODO: if the spa->uberblock is updated in memory, does the entry point already been updated?
-				memcpy(ub, ub_commitment, sizeof(ub));
+				memcpy(ub, ub_commitment, sizeof(*ub));
 				kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
 				kmem_free(ub_commitment, sizeof(*ub_commitment));				
 			}
