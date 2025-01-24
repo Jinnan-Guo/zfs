@@ -4118,8 +4118,9 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	nvlist_t *label;
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
-
-	const char *ub_commitment_hex = NULL;
+	
+	const char *ub_commitment_nvpair = NULL; 
+	uberblock_hex_t *ub_commitment_hex = NULL;
 	uberblock_hex_t *ub_selected_hex = NULL;
 	nvpair_t *elem = NULL;
 	const char *nm;
@@ -4169,7 +4170,12 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		nm = nvpair_name(elem);
 		if (strcmp(nm, ZPOOL_CONFIG_UB_COMMITMENT) == 0) {
 			// nvpair handles the memory lifecycle, so you dont need to malloc space for ub_commitment_hex
-			(void) nvpair_value_string(elem, &ub_commitment_hex);
+			(void) nvpair_value_string(elem, &ub_commitment_nvpair);
+			// copy commitment hex
+			if (ub_commitment_nvpair != NULL) {
+				ub_commitment_hex = kmem_alloc(sizeof(*ub_commitment_hex), KM_SLEEP);
+				memcpy(ub_commitment_hex, ub_commitment_nvpair, sizeof(*ub_commitment_hex));
+			}
 			break;
 		}
 	}
@@ -4178,17 +4184,21 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		zfs_dbgmsg("no commitment provided. bypass commitment verification");
 	} else {
 		// check if provided uberblock matches selected one
-		zfs_dbgmsg("commitment provided: %s", ub_commitment_hex);
+		zfs_dbgmsg("commitment provided: %s", ub_commitment_hex->hex_str);
 		ub_selected_hex = kmem_alloc(sizeof(*ub_selected_hex), KM_SLEEP);
 		uberblock_serialize(ub, ub_selected_hex);
-		if (strcmp(ub_commitment_hex, ub_selected_hex->hex_str) == 0) {
-			zfs_dbgmsg("commitment verification successful. uberblock in hex: %s", ub_commitment_hex);
+		if (strcmp(ub_commitment_hex->hex_str, ub_selected_hex->hex_str) == 0) {
+			zfs_dbgmsg("commitment verification successful. uberblock in hex: %s", ub_commitment_hex->hex_str);
+			kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
 			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
 		} else {
 			zfs_dbgmsg("ERROR: uberblock mismatch!");
-			zfs_dbgmsg("user provided uberblock in hex: %s", ub_commitment_hex);
+			zfs_dbgmsg("user provided uberblock in hex: %s", ub_commitment_hex->hex_str);
 			zfs_dbgmsg("selected uberblock by zfs: %s", ub_selected_hex->hex_str);
+			kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
 			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
+			// restore if the provided ub is fresher
+			// ub_commitment = kmem_alloc(sizeof(uberblock_t), 
 			return SET_ERROR(EINVAL);
 		}
 	}
