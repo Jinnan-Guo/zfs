@@ -75,6 +75,8 @@ extern "C" {
 #define	MMP_FAIL_INT_SET(fail) \
 	    (((uint64_t)(fail & 0xFFFF) << 48) | MMP_FAIL_INT_VALID_BIT)
 
+#define UBERBLOCK_HEX_BUF_SIZE	UBERBLOCK_SIZE * HEX_PER_UINT64 + 1
+
 struct uberblock {
 	uint64_t	ub_magic;	/* UBERBLOCK_MAGIC		*/
 	uint64_t	ub_version;	/* SPA_VERSION			*/
@@ -136,6 +138,13 @@ struct uberblock {
 	 * the ZIL block is not allocated [see uses of spa_min_claim_txg()].
 	 */
 	uint64_t	ub_checkpoint_txg;
+};
+
+/*
+ * struct for serialized ub
+ */
+struct uberblock_hex {
+	char hex_str[UBERBLOCK_HEX_BUF_SIZE];
 };
 
 #ifdef	__cplusplus

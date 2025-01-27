@@ -2033,9 +2033,26 @@ retry:
 		goto retry;
 	}
 
+	uberblock_dump(ub);
+	
+
+	uberblock_hex_t *ub_hex;
+	ub_hex = kmem_alloc(sizeof(*ub_hex), KM_SLEEP);
+	uberblock_serialize(ub, ub_hex);
+	zfs_dbgmsg("serialized_uberblock %s", ub_hex->hex_str);
+
 	/*
-	 * Place for prepare() callback
+	 * submit serialized uberblock to ledger
+	 * expose API? kernel->userspace->API()
+	 * result = Submit(*ub_hex)
 	 */
+
+	/*
+	 * uberblock deserialization
+	 */
+	uberblock_deserialize(ub, ub_hex);
+	kmem_free(ub_hex, sizeof(*ub_hex));
+	uberblock_dump(ub);
 
 	/*
 	 * Sync the uberblocks to all vdevs in svd[].

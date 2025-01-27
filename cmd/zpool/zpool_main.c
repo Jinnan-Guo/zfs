@@ -66,6 +66,7 @@
 #include <sys/mount.h>
 #include <sys/sysmacros.h>
 #include <sys/zio_checksum.h>
+#include <sys/uberblock_impl.h>
 #include <math.h>
 
 #include <libzfs.h>
@@ -3692,22 +3693,6 @@ zpool_do_checkpoint(int argc, char **argv)
 }
 
 #define	CHECKPOINT_OPT	1024
-#define COMMITMENT_LEN 64
-
-/*
- * convert hex string commitment to integers
- */
-static void convert_hex_to_cksum(char *hex_string, uint64_t *commitment_array) {
-	for (int i = 0; i < 4; i++) {
-		uint64_t value = 0;
-		for (int j = 0; j < 8; j++) {
-			unsigned int byte;
-			sscanf(hex_string + (i * 16) + (j * 2), "%2x", &byte);
-			value = (value << 8) | (uint64_t)(byte & 0xFF);
-		}
-		commitment_array[i] = value;
-	}
-}
 
 /*
  * zpool import [-d dir] [-D]
@@ -3794,12 +3779,8 @@ zpool_do_import(int argc, char **argv)
 	importargs_t idata = { 0 };
 	char *endptr;
 
-	// -C <commitment hex string>
-	// little endian
-	char *commitment_hex = NULL;
-
-	// commitment in uint64[4] format (same as (&zio_checksum_t)->cksum)
-	uint64_t commitment_array[4] = {0};
+	// -C <uberblock hex string>
+	const char *ub_hex = NULL;
 
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
@@ -3891,16 +3872,17 @@ zpool_do_import(int argc, char **argv)
 			flags |= ZFS_IMPORT_CHECKPOINT;
 			break;
 		case 'C':
-			commitment_hex = optarg;
-			size_t len = strlen(commitment_hex);
+			ub_hex = optarg;
+			size_t len = strlen(ub_hex);
 			// incorrect string length
-			if (len != COMMITMENT_LEN) {
-				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %d, but received '%zu'\n"), COMMITMENT_LEN, len);
+			if (len != UBERBLOCK_SIZE * HEX_PER_UINT64) {
+				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %llu, but received '%zu'\n"), (u_longlong_t)UBERBLOCK_SIZE * HEX_PER_UINT64, len);
 				usage(B_FALSE);
 			} else {
 				// convert hex string commitment to zio checksum format
 				fprintf(stderr, "correct input length\n");
-				convert_hex_to_cksum(commitment_hex, commitment_array);
+				// make sure there is no rollback/recovery when spa_load fails.
+				rewind_policy = ZPOOL_NEVER_REWIND;
 			}
 			break;
 		case ':':
@@ -3953,12 +3935,15 @@ zpool_do_import(int argc, char **argv)
 
 	/* In the future, we can capture further policy and include it here */
 	if (nvlist_alloc(&policy, NV_UNIQUE_NAME, 0) != 0 ||
-	    // add commitment array
-	    nvlist_add_uint64_array(policy, ZPOOL_LOAD_UB_COMMITMENT, commitment_array, 4) != 0 ||
 	    nvlist_add_uint64(policy, ZPOOL_LOAD_REQUEST_TXG, txg) != 0 ||
 	    nvlist_add_uint32(policy, ZPOOL_LOAD_REWIND_POLICY,
 	    rewind_policy) != 0)
 		goto error;
+	// add ub commitment to load policy
+	if (ub_hex != NULL) {
+	    if (nvlist_add_string(policy, ZPOOL_LOAD_UB_COMMITMENT, ub_hex) != 0)
+		    goto error;
+	}
 
 	/* check argument count */
 	if (do_all) {
