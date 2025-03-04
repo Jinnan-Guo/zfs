@@ -3875,9 +3875,9 @@ zpool_do_import(int argc, char **argv)
 			// commitment_hex format: <prev_ub_digest>:<new_ub_digest>"
 			commitment_hex = optarg;
 			size_t len = strlen(commitment_hex);
-			// incorrect string length
-			if (len != SHA256_DIGEST_LENGTH * HEX_PER_UINT64 * 2 + 1) {
-				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %llu, but received '%zu'\n"), (u_longlong_t)UBERBLOCK_SIZE * HEX_PER_UINT64, len);
+			// incorrect string length: expected 129
+			if (len != (SHA256_DIGEST_LENGTH * HEX_PER_UINT8 * 2 + 1)) {
+				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %llu, but received '%zu'\n"), (u_longlong_t)(SHA256_DIGEST_LENGTH * HEX_PER_UINT8 * 2 + 1), len);
 				usage(B_FALSE);
 			} else {
 				// convert hex string commitment to zio checksum format
