@@ -4358,7 +4358,7 @@ zpool_do_import(int argc, char **argv)
 	char *endptr;
 
 	// -C <uberblock hex string>
-	const char *ub_hex = NULL;
+	const char *commitment_hex = NULL;
 
 	struct option long_options[] = {
 		{"rewind-to-checkpoint", no_argument, NULL, CHECKPOINT_OPT},
@@ -4450,10 +4450,11 @@ zpool_do_import(int argc, char **argv)
 			flags |= ZFS_IMPORT_CHECKPOINT;
 			break;
 		case 'C':
-			ub_hex = optarg;
-			size_t len = strlen(ub_hex);
+			// commitment_hex format: <prev_ub_digest>:<new_ub_digest>"
+			commitment_hex = optarg;
+			size_t len = strlen(commitment_hex);
 			// incorrect string length
-			if (len != UBERBLOCK_SIZE * HEX_PER_UINT64) {
+			if (len != SHA256_DIGEST_LENGTH * HEX_PER_UINT64 * 2 + 1) {
 				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %llu, but received '%zu'\n"), (u_longlong_t)UBERBLOCK_SIZE * HEX_PER_UINT64, len);
 				usage(B_FALSE);
 			} else {
@@ -4518,8 +4519,9 @@ zpool_do_import(int argc, char **argv)
 	    rewind_policy) != 0)
 		goto error;
 	// add ub commitment to load policy
-	if (ub_hex != NULL) {
-	    if (nvlist_add_string(policy, ZPOOL_LOAD_UB_COMMITMENT, ub_hex) != 0)
+	// commitment format: <hash digest of prev ub>:<hash digest of new ub>
+	if (commitment_hex != NULL) {
+	    if (nvlist_add_string(policy, ZPOOL_LOAD_UB_COMMITMENT, commitment_hex) != 0)
 		    goto error;
 	}
 
