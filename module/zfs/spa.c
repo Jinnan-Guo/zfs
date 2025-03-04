@@ -4065,6 +4065,12 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	/*
 	 * Check uberblock's checksum against mount time commitment
 	 */
+
+	selected_ub_hex = kmem_alloc(sizeof(*selected_ub_hex), KM_SLEEP);
+        selected_ub_digest = kmem_alloc(sizeof(*selected_ub_digest), KM_SLEEP);
+	prev_ub_digest = kmem_alloc(sizeof(*prev_ub_digest), KM_SLEEP);
+	new_ub_digest = kmem_alloc(sizeof(*new_ub_digest), KM_SLEEP);
+
 	// load commitment
 	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
 		nm = nvpair_name(elem);
@@ -4080,14 +4086,14 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 					return SET_ERROR(EINVAL);
 				}
 				size_t prev_len = colon - ub_commitment_nvpair;
-				if (prev_len > SHA256_DIGEST_LENGTH * HEX_PER_UINT64) {
-					prev_len = SHA256_DIGEST_LENGTH * HEX_PER_UINT64;
+				if (prev_len > SHA256_DIGEST_LENGTH * HEX_PER_UINT8) {
+					prev_len = SHA256_DIGEST_LENGTH * HEX_PER_UINT8;
 				}
 
 				strncpy(prev_ub_digest->digest, ub_commitment_nvpair, prev_len);
 				prev_ub_digest->digest[64] = '\0';
 
-				strncpy(new_ub_digest->digest, colon + 1, SHA256_DIGEST_LENGTH * HEX_PER_UINT64);
+				strncpy(new_ub_digest->digest, colon + 1, SHA256_DIGEST_LENGTH * HEX_PER_UINT8);
 				new_ub_digest->digest[64] = '\0';
 
 			}
@@ -4106,17 +4112,26 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 		selected_ub_hex = kmem_alloc(sizeof(*selected_ub_hex), KM_SLEEP);
 		uberblock_serialize(ub, selected_ub_hex);
 		ub_hex_to_digest(selected_ub_hex, selected_ub_digest);
-		kmem_free(selected_ub_hex, sizeof(*selected_ub_hex));
+
 		zfs_dbgmsg("selected ub digest: %s", selected_ub_digest->digest);
 		// match the selected uberblock against two provided uberblock
 		if (strcmp(selected_ub_digest->digest, prev_ub_digest->digest) == 0 || strcmp(selected_ub_digest->digest, new_ub_digest->digest) == 0) {
 			zfs_dbgmsg("commitment verification successful. uberblock hash digest: %s", selected_ub_digest->digest);
+
+			kmem_free(selected_ub_hex, sizeof(*selected_ub_hex));
+			kmem_free(selected_ub_digest, sizeof(*selected_ub_digest));
+			kmem_free(prev_ub_digest, sizeof(*prev_ub_digest));
+			kmem_free(new_ub_digest, sizeof(*new_ub_digest));
 		} else {
 			zfs_dbgmsg("ERROR: uberblock mismatch!");
 			zfs_dbgmsg("provided first uberblock digest in hex: %s", prev_ub_digest->digest);
 			zfs_dbgmsg("provided second uberblock digest in hex: %s", new_ub_digest->digest);
 			zfs_dbgmsg("selected uberblock digest by zfs: %s", selected_ub_digest->digest);
 
+			kmem_free(selected_ub_hex, sizeof(*selected_ub_hex));
+			kmem_free(selected_ub_digest, sizeof(*selected_ub_digest));
+			kmem_free(prev_ub_digest, sizeof(*prev_ub_digest));
+			kmem_free(new_ub_digest, sizeof(*new_ub_digest));
 			return SET_ERROR(EINVAL);
 		}
 	}
