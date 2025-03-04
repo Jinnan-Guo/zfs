@@ -154,6 +154,7 @@
 #include <sys/fs/zfs.h>
 #include <sys/byteorder.h>
 #include <sys/zfs_bootenv.h>
+#include <sys/sha2.h>
 
 /*
  * Basic routines to read and write from a vdev label.
@@ -2126,9 +2127,15 @@ retry:
 	 * uberblock serialization
 	 */
 	uberblock_hex_t *ub_hex;
+	uberblock_digest_t *ub_digest;
 	ub_hex = kmem_alloc(sizeof(*ub_hex), KM_SLEEP);
+	ub_digest = kmem_alloc(sizeof(*ub_digest), KM_SLEEP);
 	uberblock_serialize(ub, ub_hex);
 	zfs_dbgmsg("serialized_uberblock %s", ub_hex->hex_str);
+
+	ub_hex_to_digest(ub_hex, ub_digest);
+
+	zfs_dbgmsg("Hash digest of the uberblock %s", ub_digest->digest);
 
 	/*
 	 * submit serialized uberblock to ledger
@@ -2140,6 +2147,7 @@ retry:
 	 * uberblock deserialization
 	 */
 	uberblock_deserialize(ub, ub_hex);
+	kmem_free(ub_digest, sizeof(*ub_digest));
 	kmem_free(ub_hex, sizeof(*ub_hex));
 	uberblock_dump(ub);
 

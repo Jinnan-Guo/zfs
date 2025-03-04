@@ -54,7 +54,7 @@ extern void uberblock_dump(uberblock_t *ub);
 extern void uberblock_serialize(uberblock_t *ub, uberblock_hex_t *ub_hex);
 extern void uberblock_deserialize(uberblock_t *ub, uberblock_hex_t *ub_hex);
 extern void ub_hex_to_digest(uberblock_hex_t *ub_hex, uberblock_digest_t *ub_digest);
-extern void digest_to_ub_hex(uberblock_hex_t *ub_hex, uberblock_digest_t *ub_digest);
+
 #ifdef	__cplusplus
 }
 #endif
