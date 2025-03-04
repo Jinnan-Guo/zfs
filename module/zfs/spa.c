@@ -44,6 +44,10 @@
  * pool.
  */
 
+#include "sys/sha2.h"
+#include "sys/sysmacros.h"
+#include "sys/uberblock.h"
+#include "sys/zfs_debug.h"
 #include <sys/zfs_context.h>
 #include <sys/fm/fs/zfs.h>
 #include <sys/spa_impl.h>
@@ -4007,11 +4011,17 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	nvlist_t *label;
 	uberblock_t *ub = &spa->spa_uberblock;
 	boolean_t activity_check = B_FALSE;
-	
-	const char *ub_commitment_nvpair = NULL; 
-	uberblock_hex_t *ub_commitment_hex = NULL;
-	uberblock_hex_t *ub_selected_hex = NULL;
-	uberblock_t *ub_commitment = NULL;
+
+	const char *ub_commitment_nvpair = NULL;
+	// serialized selected uberblock
+	uberblock_hex_t *selected_ub_hex = NULL;
+	// hash digest of the selected uberblock
+	uberblock_digest_t *selected_ub_digest = NULL;
+	// hash digest of prev uberblock commitment
+	uberblock_digest_t *prev_ub_digest = NULL;
+	// hash digest of new uberblock commitment
+	uberblock_digest_t *new_ub_digest = NULL;
+
 	nvpair_t *elem = NULL;
 	const char *nm;
 
@@ -4059,54 +4069,58 @@ spa_ld_select_uberblock(spa_t *spa, spa_import_type_t type)
 	while ((elem = nvlist_next_nvpair(spa->spa_config, elem)) != NULL) {
 		nm = nvpair_name(elem);
 		if (strcmp(nm, ZPOOL_CONFIG_UB_COMMITMENT) == 0) {
-			// nvpair handles the memory lifecycle, so you dont need to malloc space for ub_commitment_hex
+			// nvpair handles the memory lifecycle
 			(void) nvpair_value_string(elem, &ub_commitment_nvpair);
 			// copy commitment hex
 			if (ub_commitment_nvpair != NULL) {
-				ub_commitment_hex = kmem_alloc(sizeof(*ub_commitment_hex), KM_SLEEP);
-				memcpy(ub_commitment_hex, ub_commitment_nvpair, sizeof(*ub_commitment_hex));
+				// locate the colon
+				const char *colon = strchr(ub_commitment_nvpair, ':');
+				if (colon == NULL) {
+					zfs_dbgmsg("Error: colon not found in input string");
+					return SET_ERROR(EINVAL);
+				}
+				size_t prev_len = colon - ub_commitment_nvpair;
+				if (prev_len > SHA256_DIGEST_LENGTH * HEX_PER_UINT64) {
+					prev_len = SHA256_DIGEST_LENGTH * HEX_PER_UINT64;
+				}
+
+				strncpy(prev_ub_digest->digest, ub_commitment_nvpair, prev_len);
+				prev_ub_digest->digest[64] = '\0';
+
+				strncpy(new_ub_digest->digest, colon + 1, SHA256_DIGEST_LENGTH * HEX_PER_UINT64);
+				new_ub_digest->digest[64] = '\0';
+
 			}
 			break;
 		}
 	}
-	
-	if (ub_commitment_hex == NULL) {
+
+	if (ub_commitment_nvpair == NULL) {
 		zfs_dbgmsg("no commitment provided. bypass commitment verification");
 	} else {
 		// check if provided uberblock matches selected one
-		zfs_dbgmsg("commitment provided: %s", ub_commitment_hex->hex_str);
-		ub_selected_hex = kmem_alloc(sizeof(*ub_selected_hex), KM_SLEEP);
-		uberblock_serialize(ub, ub_selected_hex);
-		if (strcmp(ub_commitment_hex->hex_str, ub_selected_hex->hex_str) == 0) {
-			zfs_dbgmsg("commitment verification successful. uberblock in hex: %s", ub_commitment_hex->hex_str);
-			kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
-			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
+		// commitment user provided
+		zfs_dbgmsg("prev ub digest: %s", prev_ub_digest->digest);
+		zfs_dbgmsg("new ub digest: %s", new_ub_digest->digest);
+		// hash digest of the selected uberblock
+		selected_ub_hex = kmem_alloc(sizeof(*selected_ub_hex), KM_SLEEP);
+		uberblock_serialize(ub, selected_ub_hex);
+		ub_hex_to_digest(selected_ub_hex, selected_ub_digest);
+		kmem_free(selected_ub_hex, sizeof(*selected_ub_hex));
+		zfs_dbgmsg("selected ub digest: %s", selected_ub_digest->digest);
+		// match the selected uberblock against two provided uberblock
+		if (strcmp(selected_ub_digest->digest, prev_ub_digest->digest) == 0 || strcmp(selected_ub_digest->digest, new_ub_digest->digest) == 0) {
+			zfs_dbgmsg("commitment verification successful. uberblock hash digest: %s", selected_ub_digest->digest);
 		} else {
 			zfs_dbgmsg("ERROR: uberblock mismatch!");
-			zfs_dbgmsg("user provided uberblock in hex: %s", ub_commitment_hex->hex_str);
-			zfs_dbgmsg("selected uberblock by zfs: %s", ub_selected_hex->hex_str);
+			zfs_dbgmsg("provided first uberblock digest in hex: %s", prev_ub_digest->digest);
+			zfs_dbgmsg("provided second uberblock digest in hex: %s", new_ub_digest->digest);
+			zfs_dbgmsg("selected uberblock digest by zfs: %s", selected_ub_digest->digest);
 
-			kmem_free(ub_selected_hex, sizeof(*ub_selected_hex));
-			// restore if the provided ub is fresher
-			ub_commitment = kmem_alloc(sizeof(uberblock_t), KM_SLEEP);
-			uberblock_deserialize(ub_commitment, ub_commitment_hex);
-			if (ub_commitment->ub_txg > ub->ub_txg) {
-				zfs_dbgmsg("provided uberblock txg: %llu, selected uberblock txg: %llu", (u_longlong_t)ub_commitment->ub_txg, (u_longlong_t)ub->ub_txg);
-				// update ub in memory
-				// TODO: do we need to write this ub to disk, or we update in-memory structure, and wait txg sync to write more fresher ub?
-				// TODO: if the spa->uberblock is updated in memory, does the entry point already been updated?
-				memcpy(ub, ub_commitment, sizeof(*ub));
-				kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
-				kmem_free(ub_commitment, sizeof(*ub_commitment));				
-			}
-			else {
-				kmem_free(ub_commitment_hex, sizeof(*ub_commitment_hex));
-				kmem_free(ub_commitment, sizeof(*ub_commitment));
-				return SET_ERROR(EINVAL);
-			}
+			return SET_ERROR(EINVAL);
 		}
 	}
-	
+
 	if (spa->spa_load_max_txg != UINT64_MAX) {
 		(void) spa_import_progress_set_max_txg(spa_guid(spa),
 		    (u_longlong_t)spa->spa_load_max_txg);
@@ -6811,7 +6825,7 @@ spa_tryimport(nvlist_t *tryconfig)
 	uint64_t state;
 	int error;
 	zpool_load_policy_t policy;
-	
+
 	if (nvlist_lookup_string(tryconfig, ZPOOL_CONFIG_POOL_NAME, &poolname))
 		return (NULL);
 
