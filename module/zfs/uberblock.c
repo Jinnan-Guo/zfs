@@ -145,3 +145,22 @@ uberblock_deserialize(uberblock_t *ub, uberblock_hex_t *ub_hex)
 	// update uberblock
 	memcpy(ub, restore_ub, sizeof(restore_ub));
 }
+
+/*
+ * Generate sha256 hash digest from serialized uberblock
+ */
+void
+ub_hex_to_digest(uberblock_hex_t *ub_hex, uberblock_digest_t *ub_digest)
+{
+	SHA2_CTX ctx;
+	uint8_t digest[SHA256_DIGEST_LENGTH];
+
+	SHA2Init(SHA256_MECH_INFO_TYPE, &ctx);
+	SHA2Update(&ctx, ub_hex->hex_str, strlen(ub_hex->hex_str));
+	SHA2Final(digest, &ctx);
+
+	for (size_t i = 0; i < SHA256_DIGEST_LENGTH; i ++) {
+		sprintf(ub_digest->digest + (i * 2), "%02X", digest[i]);
+	}
+	ub_digest->digest[64] = '\0';
+}

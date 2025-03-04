@@ -28,6 +28,7 @@
 #define	_SYS_UBERBLOCK_IMPL_H
 
 #include <sys/uberblock.h>
+#include <sys/sha2.h>
 
 #ifdef	__cplusplus
 extern "C" {
@@ -110,6 +111,7 @@ typedef enum raidz_reflow_scratch_state {
 } while (0)
 
 #define UBERBLOCK_HEX_BUF_SIZE	UBERBLOCK_SIZE * HEX_PER_UINT64 + 1
+#define UBERBLOCK_DIGEST_BUF_SIZE SHA256_DIGEST_LENGTH * HEX_PER_UINT8 + 1
 
 struct uberblock {
 	uint64_t	ub_magic;	/* UBERBLOCK_MAGIC		*/
@@ -181,6 +183,13 @@ struct uberblock {
  */
 struct uberblock_hex {
 	char hex_str[UBERBLOCK_HEX_BUF_SIZE];
+};
+
+/*
+ * struct for ub sha256 digest
+ */
+struct uberblock_digest {
+	char digest[UBERBLOCK_DIGEST_BUF_SIZE];
 };
 
 #ifdef	__cplusplus
