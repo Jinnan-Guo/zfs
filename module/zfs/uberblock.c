@@ -91,8 +91,8 @@ uberblock_dump(uberblock_t *ub)
         zfs_dbgmsg("ub_print:rootbp->dva[0]: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[0], (u_longlong_t)ub->ub_rootbp.blk_dva[2].dva_word[1]);
         zfs_dbgmsg("ub_print:rootbp->blkprop: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_prop);
         zfs_dbgmsg("ub_print:rootbp->blk_pad: %llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_pad[0], (u_longlong_t)ub->ub_rootbp.blk_pad[1]);
-        zfs_dbgmsg("ub_print:rootbp->blk_phys_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_phys_birth);
-        zfs_dbgmsg("ub_print:rootbp->blk_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_birth);
+        zfs_dbgmsg("ub_print:rootbp->blk_phys_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_birth_word[0]);
+        zfs_dbgmsg("ub_print:rootbp->blk_birth: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_birth_word[1]);
         zfs_dbgmsg("ub_print:rootbp->blk_fill: %llu\n", (u_longlong_t)ub->ub_rootbp.blk_fill);
         zfs_dbgmsg("ub_print:rootbp->blk_cksum: %llu:%llu:%llu:%llu\n", (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[0], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[1], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[2], (u_longlong_t)ub->ub_rootbp.blk_cksum.zc_word[3]);
         zfs_dbgmsg("ub_print:software_version %llu\n", (u_longlong_t)ub->ub_software_version);
