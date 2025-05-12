@@ -155,7 +155,7 @@ ub_hex_to_digest(uberblock_hex_t *ub_hex, uberblock_digest_t *ub_digest)
 	SHA2_CTX ctx;
 	uint8_t digest[SHA256_DIGEST_LENGTH];
 
-	SHA2Init(SHA256_MECH_INFO_TYPE, &ctx);
+	SHA2Init(SHA256, &ctx);
 	SHA2Update(&ctx, ub_hex->hex_str, strlen(ub_hex->hex_str));
 	SHA2Final(digest, &ctx);
 
