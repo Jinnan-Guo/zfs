@@ -88,4 +88,3 @@ changelog
 *.orig
 *.tmp
 *.log
-compile_commands.json
