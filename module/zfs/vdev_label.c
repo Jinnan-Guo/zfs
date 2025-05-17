@@ -2154,10 +2154,7 @@ retry:
 	zfs_dbgmsg("Hash digest of the new uberblock %s", ub_digest->digest);
 
 	/*
-	 * TODO: before ub flush: submit prev and new uberblock hash to ledger
-	 * expose API? Virtual device?
-	 * kernel->userspace->API()
-	 * result = Submit(prev_ub_digest, ub_digest);
+	 * TODO: submit commitment updates to the ledger
 	 */
 
 	/*
@@ -2185,11 +2182,6 @@ retry:
 
 	if (spa_multihost(spa))
 		mmp_update_uberblock(spa, ub);
-
-	/*
-	 * TODO: after ub flush: submit new uberblock hash to ledger
-	 * result = Submit(ub_digest);
-	 */
 
 	// after ub flush, release memory
 	kmem_free(prev_ub_digest, sizeof(*prev_ub_digest));
