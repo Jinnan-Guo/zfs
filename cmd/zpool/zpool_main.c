@@ -481,8 +481,8 @@ get_usage(zpool_help_t idx)
 		    "\t    [-d dir | -c cachefile] [-D] [-l] [-f] [-m] [-N] "
 		    "[-R root] [-F [-n]] -a\n"
 		    "\timport [-o mntopts] [-o property=value] ... \n"
-		    "\t    [-d dir | -c cachefile] [-D] [-l] [-f] [-m] [-N] "
-		    "[-R root] [-F [-n]]\n"
+		    "\t    [-d dir | -c cachefile] [-D] [-l] [-f] [-m] [-N]"
+		    "[-R root] [-F [-n]] [-C \"prev_commit:new_commit\"]\n"
 		    "\t    [--rewind-to-checkpoint] <pool | id> [newpool]\n"));
 	case HELP_IOSTAT:
 		return (gettext("\tiostat [[[-c [script1,script2,...]"
