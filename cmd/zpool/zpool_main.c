@@ -481,8 +481,8 @@ get_usage(zpool_help_t idx)
 		    "\t    [-d dir | -c cachefile] [-D] [-l] [-f] [-m] [-N] "
 		    "[-R root] [-F [-n]] -a\n"
 		    "\timport [-o mntopts] [-o property=value] ... \n"
-		    "\t    [-d dir | -c cachefile] [-D] [-l] [-f] [-m] [-N]"
-		    "[-R root] [-F [-n]] [-C \"prev_commit:new_commit\"]\n"
+		    "\t    [-d dir | -c cachefile] [-C prev_commitment:new_commitment] [-D] [-l] [-f] [-m] [-N]"
+		    "[-R root] [-F [-n]]\n"
 		    "\t    [--rewind-to-checkpoint] <pool | id> [newpool]\n"));
 	case HELP_IOSTAT:
 		return (gettext("\tiostat [[[-c [script1,script2,...]"
@@ -4278,13 +4278,16 @@ zpool_do_prefetch(int argc, char **argv)
  *       import [-o mntopts] [-o prop=value] ... [-R root] [-D] [-l]
  *              [-d dir | -c cachefile | -s] [-f] -a
  *       import [-o mntopts] [-o prop=value] ... [-R root] [-D] [-l]
- *              [-d dir | -c cachefile | -s] [-f] [-n] [-F] <pool | id>
+ *              [-d dir | -c cachefile | -s] [-C prev_commitment:new_commitment] [-f] [-n] [-F] <pool | id>
  *              [newpool]
  *
  *	-c	Read pool information from a cachefile instead of searching
  *		devices. If importing from a cachefile config fails, then
  *		fallback to searching for devices only in the directories that
  *		exist in the cachefile.
+ *
+ *	-C	Verify the pool's uberblock digest against provided pool commitments.
+ *		If the verification failes, then terminate the importing process.
  *
  *	-d	Scan in a specific directory, other than /dev/.  More than
  *		one directory can be specified using multiple '-d' options.
@@ -4357,7 +4360,6 @@ zpool_do_import(int argc, char **argv)
 	importargs_t idata = { 0 };
 	char *endptr;
 
-	// commitment_hex format: <prev_ub_digest>:<new_ub_digest>"
 	const char *commitment_hex = NULL;
 
 	struct option long_options[] = {
@@ -4450,13 +4452,22 @@ zpool_do_import(int argc, char **argv)
 			flags |= ZFS_IMPORT_CHECKPOINT;
 			break;
 		case 'C':
+			/*
+			 * Usage: zpool import ... [-C prev_commitment:new_commitment]
+			 * prev_commitment:	sha256 digest of the uberblock before txg_sync.
+			 * new_commitment: sha256 digest of the uberblock after txg_sync
+			 *
+			 * How to obtain prev_commitment:
+			 * 	cat /proc/spl/kstat/zfs/dbgmsg | grep "prev uberblock" | tail -n 1 | tail -c 65 | head -c 64
+			 * How to obtain new_commitment:
+			 * 	cat /proc/spl/kstat/zfs/dbgmsg | grep "new uberblock" | tail -n 1 | tail -c 65 | head -c 64
+			 */
 			commitment_hex = optarg;
 			size_t len = strlen(commitment_hex);
 			// incorrect string length: expected 129
 			if (len != (SHA256_DIGEST_LENGTH * HEX_PER_UINT8 * 2 + 1)) {
 				(void) fprintf(stderr, gettext("incorrect commitment length. Expected %llu, but received '%zu'\n"), (u_longlong_t)(SHA256_DIGEST_LENGTH * HEX_PER_UINT8 * 2 + 1), len);
 				usage(B_FALSE);
-
 			} else {
 				// correct hex string length
 				fprintf(stderr, "correct input length\n");
